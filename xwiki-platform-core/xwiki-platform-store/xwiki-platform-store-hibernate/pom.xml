@@ -29,22 +29,14 @@
     <artifactId>xwiki-platform-core</artifactId>
     <version>3.3-SNAPSHOT</version>
   </parent>
-  <artifactId>xwiki-platform-store</artifactId>
-  <name>XWiki Platform - Store - Parent POM</name>
+  <artifactId>xwiki-platform-store-hibernate</artifactId>
+  <name>XWiki Platform - Store - Hibernate - Parent POM</name>
   <packaging>pom</packaging>
   <description>
-    XWiki data storage module. This module is intended to replace xwiki-core/src/main/com/xpn/xwiki/store in due time.
+    XWiki data storage module for storing in Hibernate.
   </description>
   <modules>
-    <module>xwiki-platform-store-api</module>
-    <module>xwiki-platform-store-transaction</module>
-    <module>xwiki-platform-store-transactionprovider</module>
-    <module>xwiki-platform-store-locks</module>
-    <module>xwiki-platform-store-serialization</module>
-    <module>xwiki-platform-store-filesystem</module>
-    <module>xwiki-platform-store-attachments</module>
-    <module>xwiki-platform-store-hibernate</module>
-    <module>xwiki-platform-store-filesystem-attachments</module>
+    <module>xwiki-platform-store-hibernate-attachments</module>
   </modules>
   <build>
     <plugins>

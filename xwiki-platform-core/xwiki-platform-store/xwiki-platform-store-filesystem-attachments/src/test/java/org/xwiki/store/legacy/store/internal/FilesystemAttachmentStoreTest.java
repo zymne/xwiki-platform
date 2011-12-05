@@ -166,7 +166,7 @@ public class FilesystemAttachmentStoreTest extends AbstractMockingComponentTestC
                 storageLocation,
                 new PreemptiveLockProvider());
 
-        this.attachStore = new FilesystemAttachmentStore(fileTools);
+        this.attachStore = new FilesystemAttachmentStore(fileTools, new DummyTransactionProvider());
         this.storeFile =
             this.fileTools.getAttachmentFileProvider(this.mockAttach).getAttachmentContentFile();
         HELLO_STREAM.reset();

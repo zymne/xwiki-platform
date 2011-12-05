@@ -38,13 +38,16 @@ import org.junit.Before;
 import org.junit.Test;
 import org.xwiki.model.internal.reference.PathStringEntityReferenceSerializer;
 import org.xwiki.model.reference.DocumentReference;
-import org.xwiki.store.filesystem.internal.AttachmentFileProvider;
-import org.xwiki.store.filesystem.internal.DefaultFilesystemStoreTools;
-import org.xwiki.store.filesystem.internal.FilesystemStoreTools;
-import org.xwiki.store.legacy.doc.internal.ListAttachmentArchive;
+import org.xwiki.store.attachments.util.internal.AttachmentFileProvider;
+import org.xwiki.store.attachments.util.internal.DefaultFilesystemStoreTools;
+import org.xwiki.store.attachments.util.internal.FilesystemStoreTools;
+import org.xwiki.store.attachments.util.internal.ListAttachmentArchive;
+import org.xwiki.store.legacy.store.attachments.filesystem.internal.FilesystemAttachmentArchiveStore;
 import org.xwiki.store.locks.preemptive.internal.PreemptiveLockProvider;
 import org.xwiki.store.serialization.xml.internal.AttachmentListMetadataSerializer;
 import org.xwiki.store.serialization.xml.internal.AttachmentMetadataSerializer;
+import org.xwiki.store.StartableTransactionRunnable;
+import org.xwiki.store.TransactionProvider;
 import org.xwiki.test.AbstractMockingComponentTestCase;
 
 /**
@@ -80,7 +83,10 @@ public class FilesystemAttachmentVersioningStoreTest extends AbstractMockingComp
                 new PreemptiveLockProvider());
         final AttachmentListMetadataSerializer serializer =
             new AttachmentListMetadataSerializer(new AttachmentMetadataSerializer());
-        this.versionStore = new FilesystemAttachmentVersioningStore(this.fileTools, serializer);
+        final FilesystemAttachmentArchiveStore archiveStore =
+            new FilesystemAttachmentArchiveStore(this.fileTools, serializer);
+        final TransactionProvider provider = new DummyTransactionProvider();
+        this.versionStore = new FilesystemAttachmentVersioningStore(archiveStore, provider);
 
         final XWikiDocument doc = new XWikiDocument(new DocumentReference("xwiki", "Main", "WebHome"));
 

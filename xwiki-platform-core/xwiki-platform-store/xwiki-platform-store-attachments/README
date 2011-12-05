@@ -1,0 +1,20 @@
+New interfaces for providing attachment storage and adapters between the new interfaces and
+the old interfaces which they replace.
+
+These APIs are temporary until XWikiAttachment is replaced with a new object interface, then
+they will be deprecated and new but similar ones will be developed to support the new attachment
+type.
+
+Yet another adapter will be developed to adapt the new attachment type to XWikiAttachment and the
+attachment store interfaces will no longer have to depend on the old core.
+
+These interfaces, and the adapters which go with them, are designed to make developing new
+attachment stores easy, to develop a new attachment store you can implement the interfaces in
+src/main/java/org/xwiki/store/attachments/newstore/internal/ then extend the abstract classes in
+src/main/java/org/xwiki/store/attachments/adapter/internal/ providing the functions to get your
+store classes and a StartableTransactionRunnable which provides the appropriate context for them.
+All of the idiosyncrasies of the original attachment storage API will be handled in the adapters.
+
+Keep in mind that while this is new code and is much preferred to implementing the old core
+interfaces directly, it is not the final implementation, after a new attachment interface is
+developed it will supersede these interfaces.

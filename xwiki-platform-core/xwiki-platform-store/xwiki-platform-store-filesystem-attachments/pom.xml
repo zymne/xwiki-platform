@@ -39,6 +39,12 @@
       <version>${commons.version}</version>
     </dependency>
 
+    <dependency>
+      <groupId>org.xwiki.platform</groupId>
+      <artifactId>xwiki-platform-store-attachments</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
     <!-- Needed for DocumentReferenceSerializer implementation. -->
     <dependency>
       <groupId>org.xwiki.platform</groupId>
@@ -64,6 +70,13 @@
     <dependency>
       <groupId>org.xwiki.platform</groupId>
       <artifactId>xwiki-platform-store-transaction</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <!-- TransactionProvider -->
+    <dependency>
+      <groupId>org.xwiki.platform</groupId>
+      <artifactId>xwiki-platform-store-transactionprovider-api</artifactId>
       <version>${project.version}</version>
     </dependency>
 

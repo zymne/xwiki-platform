@@ -326,11 +326,7 @@ public class ListAttachmentArchive extends XWikiAttachmentArchive
             if (rev.equals(attach.getVersion())) {
                 final XWikiAttachment out = cloneAttachment(attach);
                 out.setAttachment_archive(this);
-
-                // This is silly, we set the attachment document and passed value.
-                // Keeping to maintain current behavior.
                 out.setDoc(attachment.getDoc());
-
                 return out;
             }
         }
