@@ -57,10 +57,16 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.xwiki.model.internal.reference.PathStringEntityReferenceSerializer;
 import org.xwiki.model.reference.DocumentReference;
-import org.xwiki.store.filesystem.internal.DefaultFilesystemStoreTools;
-import org.xwiki.store.filesystem.internal.FilesystemStoreTools;
+import org.xwiki.store.attachments.newstore.internal.AttachmentContentStore;
+import org.xwiki.store.attachments.newstore.internal.AttachmentStore;
+import org.xwiki.store.attachments.newstore.internal.FilesystemAttachmentContentStore;
+import org.xwiki.store.attachments.adapter.internal.FilesystemHibernateAttachmentStoreAdapter;
+import org.xwiki.store.attachments.util.internal.DefaultFilesystemStoreTools;
+import org.xwiki.store.attachments.util.internal.FilesystemStoreTools;
 import org.xwiki.store.locks.preemptive.internal.PreemptiveLockProvider;
+import org.xwiki.store.TransactionRunnable;
 import org.xwiki.test.AbstractMockingComponentTestCase;
+import org.xwiki.store.attachments.adapter.internal.FilesystemHibernateAttachmentStoreAdapter;
 
 /**
  * Tests for FilesystemAttachmentStore.
@@ -85,7 +91,7 @@ public class FilesystemAttachmentStoreTest extends AbstractMockingComponentTestC
 
     private XWikiAttachment mockAttach;
 
-    private FilesystemAttachmentStore attachStore;
+    private FilesystemHibernateAttachmentStoreAdapter attachStore;
 
     private FilesystemStoreTools fileTools;
 
@@ -95,7 +101,7 @@ public class FilesystemAttachmentStoreTest extends AbstractMockingComponentTestC
 
     private XWikiHibernateStore mockHibernate;
 
-    private Session mockHibernateSession;
+    private TestingTransactionRunnable<Session> testingAttachmentDeleteTr;
 
     private XWikiDocument doc;
 
@@ -131,8 +137,11 @@ public class FilesystemAttachmentStoreTest extends AbstractMockingComponentTestC
             this.jmockContext.mock(XWikiAttachmentContent.class);
         this.mockAttachVersionStore = this.jmockContext.mock(AttachmentVersioningStore.class);
         this.mockArchive = this.jmockContext.mock(XWikiAttachmentArchive.class);
-        this.mockHibernateSession = this.jmockContext.mock(Session.class);
         this.doc = new XWikiDocument(new DocumentReference("xwiki", "Main", "WebHome"));
+
+        final AttachmentStore<Session> mockHibernateAttachmentStore =
+            this.jmockContext.mock(AttachmentStore.class);
+        this.testingAttachmentDeleteTr = new TestingTransactionRunnable();
 
         this.mockAttach = this.jmockContext.mock(XWikiAttachment.class);
         this.jmockContext.checking(new Expectations() {{
@@ -142,8 +151,6 @@ public class FilesystemAttachmentStoreTest extends AbstractMockingComponentTestC
             allowing(mockXWiki).getHibernateStore(); will(returnValue(mockHibernate));
             allowing(mockHibernate).checkHibernate(mockContext);
             allowing(mockHibernate).beginTransaction(mockContext);
-
-            allowing(mockHibernate).getSession(mockContext); will(returnValue(mockHibernateSession));
 
             allowing(mockXWiki).getAttachmentVersioningStore(); will(returnValue(mockAttachVersionStore));
             allowing(mockAttachVersionStore).saveArchive(mockArchive, mockContext, false);
@@ -156,6 +163,10 @@ public class FilesystemAttachmentStoreTest extends AbstractMockingComponentTestC
             allowing(mockAttach).getAttachment_content(); will(returnValue(mockDirtyContent));
             allowing(mockAttach).isContentDirty(); will(returnValue(true));
             allowing(mockDirtyContent).isContentDirty(); will(returnValue(true));
+            allowing(mockDirtyContent).getAttachment(); will(returnValue(mockAttach));
+            allowing(mockDirtyContent).getContentInputStream(); will(returnValue(HELLO_STREAM));
+            allowing(mockHibernateAttachmentStore).getAttachmentDeleteRunnable(with(any(List.class)));
+                will(returnValue(testingAttachmentDeleteTr));
         }});
 
         final File tmpDir = new File(System.getProperty("java.io.tmpdir"));
@@ -166,7 +177,13 @@ public class FilesystemAttachmentStoreTest extends AbstractMockingComponentTestC
                 storageLocation,
                 new PreemptiveLockProvider());
 
-        this.attachStore = new FilesystemAttachmentStore(fileTools);
+        final AttachmentContentStore contentStore =
+            new FilesystemAttachmentContentStore(this.fileTools);
+
+        this.attachStore =
+            new FilesystemHibernateAttachmentStoreAdapter(contentStore,
+                                                          mockHibernateAttachmentStore,
+                                                          new DummyTransactionProvider());
         this.storeFile =
             this.fileTools.getAttachmentFileProvider(this.mockAttach).getAttachmentContentFile();
         HELLO_STREAM.reset();
@@ -237,12 +254,12 @@ public class FilesystemAttachmentStoreTest extends AbstractMockingComponentTestC
     {
         this.jmockContext.checking(new Expectations() {{
             oneOf(mockAttachVersionStore).deleteArchive(mockAttach, mockContext, false);
-            exactly(2).of(mockHibernateSession).delete(with(anything()));
         }});
         this.createFile();
 
         this.attachStore.deleteXWikiAttachment(this.mockAttach, false, this.mockContext, false);
-
+        Assert.assertTrue("Attachment metadata was not deleted.",
+                          this.testingAttachmentDeleteTr.numberOfTimesCalled == 1);
         Assert.assertFalse("The attachment file was not deleted.", this.storeFile.exists());
     }
 
@@ -255,7 +272,6 @@ public class FilesystemAttachmentStoreTest extends AbstractMockingComponentTestC
 
         this.jmockContext.checking(new Expectations() {{
             oneOf(mockAttachVersionStore).deleteArchive(mockAttach, mockContext, false);
-            exactly(2).of(mockHibernateSession).delete(with(anything()));
             oneOf(mockHibernate).saveXWikiDoc(doc, mockContext, false);
             will(new CustomAction("Make sure the attachment has been removed from the list.")
             {
@@ -271,6 +287,8 @@ public class FilesystemAttachmentStoreTest extends AbstractMockingComponentTestC
         this.createFile();
 
         this.attachStore.deleteXWikiAttachment(this.mockAttach, true, this.mockContext, false);
+        Assert.assertTrue("Attachment metadata was not deleted.",
+                          this.testingAttachmentDeleteTr.numberOfTimesCalled == 1);
     }
 
     @Test
@@ -306,5 +324,16 @@ public class FilesystemAttachmentStoreTest extends AbstractMockingComponentTestC
             }
         }
         toDelete.delete();
+    }
+
+    /** Used for making assertions that a TR has been run. */
+    private static class TestingTransactionRunnable<T> extends TransactionRunnable<T>
+    {
+        public int numberOfTimesCalled;
+
+        public void onRun()
+        {
+            this.numberOfTimesCalled++;
+        }
     }
 }

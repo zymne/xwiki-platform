@@ -98,7 +98,7 @@ public class ListAttachmentArchive extends XWikiAttachmentArchive
         long id = revisions.get(0).getId();
         final String firstAttachName = revisions.get(0).getFilename();
 
-        for (XWikiAttachment attach : revisions) {
+        for (final XWikiAttachment attach : revisions) {
             if (attach.getId() != id) {
                 throw new IllegalArgumentException("Attachment " + attach.getFilename() + " has a "
                     + "different ID than the first attachment ( "
@@ -326,11 +326,7 @@ public class ListAttachmentArchive extends XWikiAttachmentArchive
             if (rev.equals(attach.getVersion())) {
                 final XWikiAttachment out = cloneAttachment(attach);
                 out.setAttachment_archive(this);
-
-                // This is silly, we set the attachment document and passed value.
-                // Keeping to maintain current behavior.
                 out.setDoc(attachment.getDoc());
-
                 return out;
             }
         }
@@ -352,7 +348,7 @@ public class ListAttachmentArchive extends XWikiAttachmentArchive
         @Override
         public int compare(final XWikiAttachment a, final XWikiAttachment b)
         {
-            return a.getRCSVersion().compareTo(b.getRCSVersion());
+            return b.getRCSVersion().compareTo(a.getRCSVersion());
         }
     }
 }

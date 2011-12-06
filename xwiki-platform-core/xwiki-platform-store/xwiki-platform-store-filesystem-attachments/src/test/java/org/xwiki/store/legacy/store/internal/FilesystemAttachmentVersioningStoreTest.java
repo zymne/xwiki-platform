@@ -38,13 +38,17 @@ import org.junit.Before;
 import org.junit.Test;
 import org.xwiki.model.internal.reference.PathStringEntityReferenceSerializer;
 import org.xwiki.model.reference.DocumentReference;
-import org.xwiki.store.filesystem.internal.AttachmentFileProvider;
-import org.xwiki.store.filesystem.internal.DefaultFilesystemStoreTools;
-import org.xwiki.store.filesystem.internal.FilesystemStoreTools;
+import org.xwiki.store.attachments.adapter.internal.FilesystemAttachmentVersioningStoreAdapter;
+import org.xwiki.store.attachments.newstore.internal.FilesystemAttachmentArchiveStore;
+import org.xwiki.store.attachments.util.internal.AttachmentFileProvider;
+import org.xwiki.store.attachments.util.internal.DefaultFilesystemStoreTools;
+import org.xwiki.store.attachments.util.internal.FilesystemStoreTools;
 import org.xwiki.store.legacy.doc.internal.ListAttachmentArchive;
 import org.xwiki.store.locks.preemptive.internal.PreemptiveLockProvider;
 import org.xwiki.store.serialization.xml.internal.AttachmentListMetadataSerializer;
 import org.xwiki.store.serialization.xml.internal.AttachmentMetadataSerializer;
+import org.xwiki.store.StartableTransactionRunnable;
+import org.xwiki.store.TransactionProvider;
 import org.xwiki.test.AbstractMockingComponentTestCase;
 
 /**
@@ -80,7 +84,10 @@ public class FilesystemAttachmentVersioningStoreTest extends AbstractMockingComp
                 new PreemptiveLockProvider());
         final AttachmentListMetadataSerializer serializer =
             new AttachmentListMetadataSerializer(new AttachmentMetadataSerializer());
-        this.versionStore = new FilesystemAttachmentVersioningStore(this.fileTools, serializer);
+        final FilesystemAttachmentArchiveStore archiveStore =
+            new FilesystemAttachmentArchiveStore(this.fileTools, serializer);
+        final TransactionProvider provider = new DummyTransactionProvider();
+        this.versionStore = new FilesystemAttachmentVersioningStoreAdapter(archiveStore, provider);
 
         final XWikiDocument doc = new XWikiDocument(new DocumentReference("xwiki", "Main", "WebHome"));
 
@@ -177,19 +184,23 @@ public class FilesystemAttachmentVersioningStoreTest extends AbstractMockingComp
     @Test
     public void deleteArchiveTest() throws Exception
     {
+System.out.println("Current version is: " + this.archive.getAttachment().getVersion());
         this.versionStore.saveArchive(this.archive, null, false);
 
         Assert.assertTrue(this.provider.getAttachmentVersioningMetaFile().exists());
         Assert.assertTrue(this.provider.getAttachmentVersionContentFile("1.1").exists());
         Assert.assertTrue(this.provider.getAttachmentVersionContentFile("1.2").exists());
         Assert.assertTrue(this.provider.getAttachmentVersionContentFile("1.3").exists());
-
+System.out.println("Current version is: " + this.archive.getAttachment().getVersion());
+System.out.println("Deleting");
         this.versionStore.deleteArchive(this.archive.getAttachment(), null, false);
-
+System.out.println("deleted");
         Assert.assertFalse(this.provider.getAttachmentVersioningMetaFile().exists());
         Assert.assertFalse(this.provider.getAttachmentVersionContentFile("1.1").exists());
+//try{Thread.sleep(100000000);}catch(Exception e){}
         Assert.assertFalse(this.provider.getAttachmentVersionContentFile("1.2").exists());
         Assert.assertFalse(this.provider.getAttachmentVersionContentFile("1.3").exists());
+System.out.println("done");
     }
 
     /* -------------------- Helpers -------------------- */
