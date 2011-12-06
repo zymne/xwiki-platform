@@ -296,6 +296,16 @@ public abstract class AbstractAttachmentStoreAdapter<T>
         this.getMetaStore()
             .getAttachmentDeleteRunnable(new ArrayList<XWikiAttachment>(1) { { add(attachment); } })
                 .runIn(transaction);
+
+        try {
+            (System.out).println("Transaction Starting");
+            transaction.start();
+        } catch (TransactionException e) {
+            throw new XWikiException(XWikiException.MODULE_XWIKI_STORE,
+                                     XWikiException.ERROR_XWIKI_UNKNOWN,
+                                     "Unable to delete attachment content",
+                                     e);
+        }
     }
 
     @Override
