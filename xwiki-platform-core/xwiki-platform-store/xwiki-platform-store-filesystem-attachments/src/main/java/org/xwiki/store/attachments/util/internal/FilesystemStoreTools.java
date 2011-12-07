@@ -22,7 +22,6 @@ package org.xwiki.store.attachments.util.internal;
 import java.io.File;
 import java.util.Date;
 import java.util.Map;
-import java.util.concurrent.locks.ReadWriteLock;
 
 import com.xpn.xwiki.doc.XWikiAttachment;
 import org.xwiki.component.annotation.ComponentRole;
@@ -42,24 +41,6 @@ import org.xwiki.store.TransactionRunnable;
 @ComponentRole
 public interface FilesystemStoreTools
 {
-    /**
-     * Get a backup file which for a given storage file.
-     * This file name will never collide with any other file gotten through this interface.
-     *
-     * @param storageFile the file to get a backup file for.
-     * @return a backup file with a name based on the name of the given file.
-     */
-    //File getBackupFile(final File storageFile);
-
-    /**
-     * Get a temporary file which for a given storage file.
-     * This file name will never collide with any other file gotten through this interface.
-     *
-     * @param storageFile the file to get a temporary file for.
-     * @return a temporary file with a name based on the name of the given file.
-     */
-    //File getTempFile(final File storageFile);
-
     /**
      * Get an instance of AttachmentFileProvider which will save everything to do with an attachment
      * in a separate location which is repeatable only with the same attachment name, and containing
@@ -114,27 +95,19 @@ public interface FilesystemStoreTools
     DeletedAttachmentFileProvider getDeletedAttachmentFileProvider(final String pathToDirectory);
 
     /**
-     * Get a {@link java.util.concurrent.locks.ReadWriteLock} which is unique to the given file.
-     * This method will always return the same lock for the path on the filesystem even if the
-     * {@link java.io.File} object is different.
-     *
-     * @param toLock the file to get a lock for.
-     * @return a lock for the given file.
-     */
-    //ReadWriteLock getLockForFile(final File toLock);
-
-    /**
      * Get a TR to save a file.
      *
      * @param provider the means to get the content to save.
      * @param saveHere the location to save the data.
+     * @return a TransactionRunnable to save the file.
      */
     TransactionRunnable getSaver(final StreamProvider provider, final File saveHere);
 
     /**
      * Get a TR to delete a file.
      *
-     * @param file to delete.
+     * @param toDelete the file to delete.
+     * @return a TransactionRunnable to delete the file.
      */
     TransactionRunnable getDeleter(final File toDelete);
 }

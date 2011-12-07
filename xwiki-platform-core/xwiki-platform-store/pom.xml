@@ -38,7 +38,6 @@
   <modules>
     <module>xwiki-platform-store-api</module>
     <module>xwiki-platform-store-transaction</module>
-    <module>xwiki-platform-store-transactionprovider</module>
     <module>xwiki-platform-store-locks</module>
     <module>xwiki-platform-store-serialization</module>
     <module>xwiki-platform-store-filesystem</module>

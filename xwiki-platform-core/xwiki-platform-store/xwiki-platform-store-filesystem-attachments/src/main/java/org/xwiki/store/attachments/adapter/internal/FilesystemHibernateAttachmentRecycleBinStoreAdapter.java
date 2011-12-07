@@ -19,51 +19,21 @@
  */
 package org.xwiki.store.attachments.adapter.internal;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.ReadWriteLock;
-
-import com.xpn.xwiki.doc.DeletedAttachment;
-import com.xpn.xwiki.doc.XWikiAttachment;
-import com.xpn.xwiki.doc.XWikiDocument;
-import com.xpn.xwiki.store.AttachmentRecycleBinStore;
-import com.xpn.xwiki.store.AttachmentVersioningStore;
 import com.xpn.xwiki.XWikiContext;
-import com.xpn.xwiki.XWikiException;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 import javax.inject.Provider;
 import org.hibernate.Session;
 import org.xwiki.component.annotation.Component;
-import org.xwiki.component.phase.Initializable;
-import org.xwiki.component.phase.InitializationException;
 import org.xwiki.context.Execution;
 import org.xwiki.model.EntityType;
 import org.xwiki.model.reference.AttachmentReference;
 import org.xwiki.model.reference.DocumentReference;
-import org.xwiki.model.reference.EntityReference;
 import org.xwiki.model.reference.EntityReferenceResolver;
 import org.xwiki.model.reference.WikiReference;
 import org.xwiki.store.attachments.newstore.internal.DeletedAttachmentContentStore;
 import org.xwiki.store.attachments.newstore.internal.DeletedAttachmentStore;
-import org.xwiki.store.FileDeleteTransactionRunnable;
-import org.xwiki.store.FileSaveTransactionRunnable;
-import org.xwiki.store.attachments.util.internal.DeletedAttachmentFileProvider;
-import org.xwiki.store.attachments.util.internal.FilesystemStoreTools;
-import org.xwiki.store.legacy.doc.internal.DeletedFilesystemAttachment;
-import org.xwiki.store.legacy.doc.internal.FilesystemAttachmentContent;
-import org.xwiki.store.legacy.doc.internal.MutableDeletedFilesystemAttachment;
-import org.xwiki.store.serialization.Serializer;
-import org.xwiki.store.serialization.SerializationStreamProvider;
 import org.xwiki.store.StartableTransactionRunnable;
 import org.xwiki.store.TransactionException;
 import org.xwiki.store.TransactionRunnable;
@@ -149,7 +119,7 @@ public class FilesystemHibernateAttachmentRecycleBinStoreAdapter
             {
                 final Object[] result = (Object[]) this.getContext().createQuery(
                     "SELECT attach.docName, attach.filename FROM DeletedAttachment as attach "
-                  + "WHERE attach.id = :id").setLong("id", id).uniqueResult();
+                    + "WHERE attach.id = :id").setLong("id", id).uniqueResult();
 
                 if (result != null) {
                     docNameAndFileName[0] = (String) result[0];
@@ -175,6 +145,12 @@ public class FilesystemHibernateAttachmentRecycleBinStoreAdapter
         return null;
     }
 
+    /**
+     * Get the current wiki reference.
+     * This is required in order to get an attachment reference for an attachment ID.
+     *
+     * @return the current wiki reference.
+     */
     private WikiReference getWikiRef()
     {
         final XWikiContext xc =

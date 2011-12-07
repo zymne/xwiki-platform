@@ -19,13 +19,22 @@
  */
 package org.xwiki.store.legacy.store.internal;
 
+import javax.inject.Provider;
+import org.hibernate.Session;
+import org.xwiki.store.StartableTransactionRunnable;
+
 /**
- * A Transaction based on Hibernate storage engine.
+ * TransactionProvider which provides fake hibernate transactions which do nothing.
  *
  * @version $Id$
- * @since 3.0M2
+ * @since 3.3M2
  */
-public interface HibernateTransaction
+public class DummyHibernateTransactionProvider
+    implements Provider<StartableTransactionRunnable<Session>>
 {
-    // Do nothing.
+    @Override
+    public StartableTransactionRunnable<Session> get()
+    {
+        return new StartableTransactionRunnable<Session>() { };
+    }
 }

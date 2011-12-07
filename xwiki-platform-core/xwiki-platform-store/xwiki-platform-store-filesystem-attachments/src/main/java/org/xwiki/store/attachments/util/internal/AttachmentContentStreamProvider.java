@@ -41,7 +41,7 @@ public class AttachmentContentStreamProvider implements StreamProvider
     /**
      * The Constructor.
      *
-     * @param attachment the attachment whose content should become the stream.
+     * @param attachmentContent the content which should be read as a stream.
      */
     public AttachmentContentStreamProvider(final XWikiAttachmentContent attachmentContent)
     {

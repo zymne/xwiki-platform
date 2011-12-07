@@ -41,6 +41,7 @@ import com.xpn.xwiki.store.XWikiHibernateStore;
 import com.xpn.xwiki.web.Utils;
 import com.xpn.xwiki.XWiki;
 import com.xpn.xwiki.XWikiContext;
+import javax.inject.Provider;
 import org.apache.commons.io.IOUtils;
 import org.hibernate.Session;
 import org.jmock.Expectations;
@@ -64,6 +65,7 @@ import org.xwiki.store.attachments.adapter.internal.FilesystemHibernateAttachmen
 import org.xwiki.store.attachments.util.internal.DefaultFilesystemStoreTools;
 import org.xwiki.store.attachments.util.internal.FilesystemStoreTools;
 import org.xwiki.store.locks.preemptive.internal.PreemptiveLockProvider;
+import org.xwiki.store.StartableTransactionRunnable;
 import org.xwiki.store.TransactionRunnable;
 import org.xwiki.test.AbstractMockingComponentTestCase;
 import org.xwiki.store.attachments.adapter.internal.FilesystemHibernateAttachmentStoreAdapter;
@@ -152,7 +154,8 @@ public class FilesystemAttachmentStoreTest extends AbstractMockingComponentTestC
             allowing(mockHibernate).checkHibernate(mockContext);
             allowing(mockHibernate).beginTransaction(mockContext);
 
-            allowing(mockXWiki).getAttachmentVersioningStore(); will(returnValue(mockAttachVersionStore));
+            allowing(mockXWiki).getAttachmentVersioningStore();
+                will(returnValue(mockAttachVersionStore));
             allowing(mockAttachVersionStore).saveArchive(mockArchive, mockContext, false);
 
             allowing(mockAttach).getContentInputStream(mockContext); will(returnValue(HELLO_STREAM));
@@ -181,9 +184,10 @@ public class FilesystemAttachmentStoreTest extends AbstractMockingComponentTestC
             new FilesystemAttachmentContentStore(this.fileTools);
 
         this.attachStore =
-            new FilesystemHibernateAttachmentStoreAdapter(contentStore,
-                                                          mockHibernateAttachmentStore,
-                                                          new DummyTransactionProvider());
+            new FilesystemHibernateAttachmentStoreAdapter(
+                contentStore,
+                mockHibernateAttachmentStore,
+                new DummyHibernateTransactionProvider());
         this.storeFile =
             this.fileTools.getAttachmentFileProvider(this.mockAttach).getAttachmentContentFile();
         HELLO_STREAM.reset();

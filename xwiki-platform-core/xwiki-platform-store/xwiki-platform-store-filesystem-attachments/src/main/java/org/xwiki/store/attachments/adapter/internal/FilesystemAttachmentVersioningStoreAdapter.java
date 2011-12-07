@@ -26,7 +26,6 @@ import javax.inject.Singleton;
 import org.xwiki.component.annotation.Component;
 import org.xwiki.store.attachments.newstore.internal.AttachmentArchiveStore;
 import org.xwiki.store.StartableTransactionRunnable;
-import org.xwiki.store.TransactionProvider;
 
 /**
  * Filesystem based AttachmentVersioningStore implementation.
@@ -61,8 +60,9 @@ public class FilesystemAttachmentVersioningStoreAdapter
      * @param archiveStore the underlying attachment archive store.
      * @param provider the means of getting a transaction to synchronize with.
      */
-    public FilesystemAttachmentVersioningStoreAdapter(final AttachmentArchiveStore archiveStore,
-                                                      final TransactionProvider provider)
+    public FilesystemAttachmentVersioningStoreAdapter(
+        final AttachmentArchiveStore archiveStore,
+        final Provider<StartableTransactionRunnable> provider)
     {
         super(Object.class);
         this.archiveStore = archiveStore;

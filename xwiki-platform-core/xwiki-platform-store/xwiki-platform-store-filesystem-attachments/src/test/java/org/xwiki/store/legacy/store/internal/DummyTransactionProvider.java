@@ -19,8 +19,8 @@
  */
 package org.xwiki.store.legacy.store.internal;
 
+import javax.inject.Provider;
 import org.xwiki.store.StartableTransactionRunnable;
-import org.xwiki.store.TransactionProvider;
 
 /**
  * TransactionProvider which provides transactions that are not linked to anything.
@@ -28,7 +28,7 @@ import org.xwiki.store.TransactionProvider;
  * @version $Id$
  * @since 3.3M2
  */
-public class DummyTransactionProvider implements TransactionProvider
+public class DummyTransactionProvider implements Provider<StartableTransactionRunnable>
 {
     @Override
     public StartableTransactionRunnable get()

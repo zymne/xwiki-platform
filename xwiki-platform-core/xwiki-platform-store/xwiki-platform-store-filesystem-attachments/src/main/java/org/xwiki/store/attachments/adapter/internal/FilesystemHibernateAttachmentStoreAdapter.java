@@ -21,13 +21,13 @@ package org.xwiki.store.attachments.adapter.internal;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Provider;
 import javax.inject.Singleton;
 import org.hibernate.Session;
 import org.xwiki.component.annotation.Component;
 import org.xwiki.store.attachments.newstore.internal.AttachmentContentStore;
 import org.xwiki.store.attachments.newstore.internal.AttachmentStore;
 import org.xwiki.store.StartableTransactionRunnable;
-import org.xwiki.store.TransactionProvider;
 
 /**
  * AttachmentVersioningStore implementation.
@@ -55,7 +55,7 @@ public class FilesystemHibernateAttachmentStoreAdapter
     /** A means of getting a transaction to run the attachment save operation in. */
     @Named("configured")
     @Inject
-    private TransactionProvider<Session> provider;
+    private Provider<StartableTransactionRunnable<Session>> provider;
 
     /**
      * Testing Constructor.
@@ -64,9 +64,10 @@ public class FilesystemHibernateAttachmentStoreAdapter
      * @param metaStore the hibernate based store for the metadata.
      * @param provider the means of getting a transaction to run in.
      */
-    public FilesystemHibernateAttachmentStoreAdapter(final AttachmentContentStore contentStore,
-                                                     final AttachmentStore<Session> metaStore,
-                                                     final TransactionProvider<Session> provider)
+    public FilesystemHibernateAttachmentStoreAdapter(
+        final AttachmentContentStore contentStore,
+        final AttachmentStore<Session> metaStore,
+        final Provider<StartableTransactionRunnable<Session>> provider)
     {
         super(Session.class);
         this.contentStore = contentStore;

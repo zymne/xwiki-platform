@@ -46,12 +46,6 @@
       <version>${project.version}</version>
     </dependency>
 
-    <dependency>
-      <groupId>org.xwiki.platform</groupId>
-      <artifactId>xwiki-platform-store-transactionprovider-api</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-
     <!-- needed only for the XWikiAttachment class -->
     <dependency>
       <groupId>org.xwiki.platform</groupId>

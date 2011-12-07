@@ -73,13 +73,6 @@
       <version>${project.version}</version>
     </dependency>
 
-    <!-- TransactionProvider -->
-    <dependency>
-      <groupId>org.xwiki.platform</groupId>
-      <artifactId>xwiki-platform-store-transactionprovider-api</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-
     <!-- FileSaveTransactionRunnable, FileDeleteTransactionRunnable -->
     <dependency>
       <groupId>org.xwiki.platform</groupId>

@@ -39,12 +39,6 @@
       <version>${project.version}</version>
     </dependency>
 
-    <dependency>
-      <groupId>org.xwiki.platform</groupId>
-      <artifactId>xwiki-platform-store-transactionprovider</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-
     <!--
       * needed for the XWikiAttachment, XWikiAttachmentArchive, and DeletedAttachment classes
       -->

@@ -298,7 +298,6 @@ public abstract class AbstractAttachmentStoreAdapter<T>
                 .runIn(transaction);
 
         try {
-            (System.out).println("Transaction Starting");
             transaction.start();
         } catch (TransactionException e) {
             throw new XWikiException(XWikiException.MODULE_XWIKI_STORE,

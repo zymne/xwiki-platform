@@ -20,7 +20,6 @@
 package org.xwiki.store.attachments.util.internal;
 
 import java.io.File;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -28,7 +27,6 @@ import java.util.concurrent.locks.ReadWriteLock;
 
 import com.xpn.xwiki.XWikiContext;
 import com.xpn.xwiki.doc.XWikiAttachment;
-import com.xpn.xwiki.doc.XWikiDocument;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
@@ -85,15 +83,15 @@ public class DefaultFilesystemStoreTools implements FilesystemStoreTools, Initia
 
     /**
      * When a file is being saved, the original will be moved to the same name with this after it.
-     * If the save operation fails then this file will be moved back to the regular position to come as
-     * close as possible to ACID transaction handling.
+     * If the save operation fails then this file will be moved back to the regular position to come
+     * as close as possible to ACID transaction handling.
      */
     private static final String BACKUP_FILE_SUFFIX = "~bak";
 
     /**
      * When a file is being deleted, it will be renamed with this at the end of the filename in the
-     * transaction. If the transaction succeeds then the temp file will be deleted, if it fails then the
-     * temp file will be renamed back to the original filename.
+     * transaction. If the transaction succeeds then the temp file will be deleted, if it fails then
+     * the temp file will be renamed back to the original filename.
      */
     private static final String TEMP_FILE_SUFFIX = "~tmp";
 
@@ -148,7 +146,8 @@ public class DefaultFilesystemStoreTools implements FilesystemStoreTools, Initia
     @Override
     public void initialize()
     {
-        final XWikiContext context = ((XWikiContext) this.exec.getContext().getProperty("xwikicontext"));
+        final XWikiContext context =
+            ((XWikiContext) this.exec.getContext().getProperty("xwikicontext"));
         final File workDir = context.getWiki().getWorkDirectory(context);
         this.storageDir = new File(workDir, STORAGE_DIR_NAME);
 
@@ -210,7 +209,7 @@ public class DefaultFilesystemStoreTools implements FilesystemStoreTools, Initia
             return out;
         }
 
-        for (File file : Arrays.asList(deletedAttachmentsDir.listFiles())) {
+        for (File file : deletedAttachmentsDir.listFiles()) {
             final String currentName = getFilenameFromDeletedAttachmentDirectory(file);
             if (out.get(currentName) == null) {
                 out.put(currentName, new HashMap<Date, DeletedAttachmentFileProvider>());
@@ -229,7 +228,8 @@ public class DefaultFilesystemStoreTools implements FilesystemStoreTools, Initia
     private static String getFilenameFromDeletedAttachmentDirectory(final File directory)
     {
         final String name = directory.getName();
-        final String encodedOut = name.substring(0, name.lastIndexOf(DELETED_ATTACHMENT_NAME_SEPARATOR));
+        final String encodedOut =
+            name.substring(0, name.lastIndexOf(DELETED_ATTACHMENT_NAME_SEPARATOR));
         return GenericFileUtils.getURLDecoded(encodedOut);
     }
 
@@ -241,7 +241,8 @@ public class DefaultFilesystemStoreTools implements FilesystemStoreTools, Initia
     {
         final String name = directory.getName();
         // no need to url decode this since it should only contain numbers 0-9.
-        long time = Long.parseLong(name.substring(name.lastIndexOf(DELETED_ATTACHMENT_NAME_SEPARATOR) + 1));
+        long time =
+            Long.parseLong(name.substring(name.lastIndexOf(DELETED_ATTACHMENT_NAME_SEPARATOR) + 1));
         return new Date(time);
     }
 
@@ -268,8 +269,8 @@ public class DefaultFilesystemStoreTools implements FilesystemStoreTools, Initia
     public TransactionRunnable getSaver(final StreamProvider provider, final File saveHere)
     {
         return new FileSaveTransactionRunnable(saveHere,
-                                               this.getTempFile(saveHere),
-                                               this.getBackupFile(saveHere),
+                                               getTempFile(saveHere),
+                                               getBackupFile(saveHere),
                                                this.getLockForFile(saveHere),
                                                provider);
     }
@@ -278,7 +279,7 @@ public class DefaultFilesystemStoreTools implements FilesystemStoreTools, Initia
     public TransactionRunnable getDeleter(final File toDelete)
     {
         return new FileDeleteTransactionRunnable(toDelete,
-                                                 this.getTempFile(toDelete),
+                                                 getTempFile(toDelete),
                                                  this.getLockForFile(toDelete));
     }
 
@@ -289,7 +290,7 @@ public class DefaultFilesystemStoreTools implements FilesystemStoreTools, Initia
      * @param storageFile the file to get a backup file for.
      * @return a backup file with a name based on the name of the given file.
      */
-    private File getBackupFile(final File storageFile)
+    private static File getBackupFile(final File storageFile)
     {
         return new File(storageFile.getAbsolutePath() + BACKUP_FILE_SUFFIX);
     }
@@ -301,7 +302,7 @@ public class DefaultFilesystemStoreTools implements FilesystemStoreTools, Initia
      * @param storageFile the file to get a temporary file for.
      * @return a temporary file with a name based on the name of the given file.
      */
-    private File getTempFile(final File storageFile)
+    private static File getTempFile(final File storageFile)
     {
         return new File(storageFile.getAbsolutePath() + TEMP_FILE_SUFFIX);
     }
@@ -328,14 +329,13 @@ public class DefaultFilesystemStoreTools implements FilesystemStoreTools, Initia
      */
     private File getAttachmentDir(final XWikiAttachment attachment)
     {
-        final XWikiDocument doc = attachment.getDoc();
-        if (doc == null) {
+        if (attachment.getDoc() == null) {
             throw new NullPointerException("Could not store attachment because it is not "
                 + "associated with a document.");
         }
-        final File docDir = getDocumentDir(doc.getDocumentReference(),
-            this.storageDir,
-            this.pathSerializer);
+        final File docDir = getDocumentDir(attachment.getDoc().getDocumentReference(),
+                                           this.storageDir,
+                                           this.pathSerializer);
         final File attachmentsDir = new File(docDir, ATTACHMENT_DIR_NAME);
         return new File(attachmentsDir, GenericFileUtils.getURLEncoded(attachment.getFilename()));
     }

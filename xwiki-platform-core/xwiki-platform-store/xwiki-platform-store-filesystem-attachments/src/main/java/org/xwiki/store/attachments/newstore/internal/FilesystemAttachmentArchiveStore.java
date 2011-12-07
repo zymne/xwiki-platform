@@ -26,15 +26,12 @@ import java.io.IOException;
 import java.util.List;
 
 import com.xpn.xwiki.doc.XWikiAttachment;
-import com.xpn.xwiki.doc.XWikiAttachmentContent;
 import com.xpn.xwiki.XWikiException;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 import org.suigeneris.jrcs.rcs.Version;
 import org.xwiki.component.annotation.Component;
-import org.xwiki.store.FileDeleteTransactionRunnable;
-import org.xwiki.store.FileSaveTransactionRunnable;
 import org.xwiki.store.attachments.util.internal.AttachmentContentStreamProvider;
 import org.xwiki.store.attachments.util.internal.AttachmentFileProvider;
 import org.xwiki.store.attachments.util.internal.FilesystemStoreTools;
@@ -146,26 +143,24 @@ public class FilesystemAttachmentArchiveStore implements AttachmentArchiveStore
             };
         }
 
-        final Serializer<List<XWikiAttachment>, List<XWikiAttachment>> metaSerializer =
-            this.metaSerializer;
+        final Serializer<List<XWikiAttachment>,
+                         List<XWikiAttachment>> mSerializer = this.metaSerializer;
 
         return new TransactionRunnable() {
             @Override
             protected void onRun() throws IOException
             {
                 final InputStream is = new FileInputStream(metaFile);
-                final List<XWikiAttachment> attachList = metaSerializer.parse(is);
+                final List<XWikiAttachment> attachList = mSerializer.parse(is);
                 is.close();
 
                 for (XWikiAttachment attach : attachList) {
-                    final File contentFile =
-                        provider.getAttachmentVersionContentFile(attach.getVersion());
                     attach.setAttachment_content(
-                        new FilesystemAttachmentContent(contentFile, attach));
+                        new FilesystemAttachmentContent(
+                            provider.getAttachmentVersionContentFile(attach.getVersion()), attach));
                     // Pass the document since it will be lost in the serialize/deserialize.
                     attach.setDoc(attachment.getDoc());
                 }
-
                 final ListAttachmentArchive out = new ListAttachmentArchive(attachList);
                 out.setAttachment(attachment);
                 attachment.setAttachment_archive(out);
@@ -176,18 +171,13 @@ public class FilesystemAttachmentArchiveStore implements AttachmentArchiveStore
     @Override
     public TransactionRunnable getAttachmentArchiveDeleteRunnable(final XWikiAttachment attachment)
     {
-System.out.println("Getting attachment delete TR");
         checkAttachedToDocument(attachment);
 
         final AttachmentFileProvider provider =
             this.fileTools.getAttachmentFileProvider(attachment);
         final TransactionRunnable out = new TransactionRunnable();
-System.out.println("Getting deleter");
         this.fileTools.getDeleter(provider.getAttachmentVersioningMetaFile()).runIn(out);
-System.out.println("got deleter, version=" + attachment.getVersion());
-Version v = new Version("1.1");
-v.next();
-System.out.println("v2 =" + v.toString());
+
         final List<Version> versions;
         try {
             versions = attachment.getVersionList();
@@ -195,9 +185,8 @@ System.out.println("v2 =" + v.toString());
             // As of this writing, XWikiAttachment.getVersonList() does not throw exceptions.
             throw new UnexpectedException(e);
         }
-System.out.println("run over versions");
+
         for (final Version ver : versions) {
-System.out.println("Will delete " + ver);
             final File file = provider.getAttachmentVersionContentFile(ver.toString());
             this.fileTools.getDeleter(file).runIn(out);
         }

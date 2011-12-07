@@ -27,8 +27,6 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 import org.xwiki.component.annotation.Component;
-import org.xwiki.store.FileDeleteTransactionRunnable;
-import org.xwiki.store.FileSaveTransactionRunnable;
 import org.xwiki.store.attachments.util.internal.FilesystemStoreTools;
 import org.xwiki.store.attachments.util.internal.AttachmentContentStreamProvider;
 import org.xwiki.store.legacy.doc.internal.FilesystemAttachmentContent;
@@ -104,13 +102,8 @@ public class FilesystemAttachmentContentStore implements AttachmentContentStore
     @Override
     public TransactionRunnable getAttachmentContentDeleteRunnable(final XWikiAttachment attachment)
     {
-System.out.println("Content delete runnable was called.");
-try{
-throw new Exception();
-} catch (Exception e) { e.printStackTrace(); }
         final File attachFile =
             this.fileTools.getAttachmentFileProvider(attachment).getAttachmentContentFile();
-System.out.println("Will delete: " + attachFile.getAbsolutePath());
         return this.fileTools.getDeleter(attachFile);
     }
 }
