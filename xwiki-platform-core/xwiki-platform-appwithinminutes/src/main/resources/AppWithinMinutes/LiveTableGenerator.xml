@@ -26,7 +26,7 @@
 <content>{{velocity output="false" filter="none"}}
 #macro(prepareTranslations)
 ${escapetool.h}set(${escapetool.d}originalMsg = ${escapetool.d}msg)
-${escapetool.h}set(${escapetool.d}msg = {
+${escapetool.h}set(${escapetool.d}msg = ${escapetool.d}services.dynamicMessageToolFactory.createDynamicMessageTool(${escapetool.d}msg, {
 ##
 ## Inject translations for the selected columns.
 #set($genericColumns = {
@@ -67,21 +67,13 @@ ${escapetool.h}set(${escapetool.d}msg = {
 #end
 #end## Actions column
 #end## Generic column
-  '${shortName}.livetable.$column': '$escapetool.javascript($translatedColumnName)',
-#end## Selected columns
-##
-## Copy the live table and pagination translations.
-#foreach($key in ['results', 'resultsmacros', 'filters.title', 'loading', 'tags.help', 'tags.help.cancel', 'environmentCannotLoadTableMessage', 'pagesize.label', 'tools', 'tools.excel', 'select.all'])
-  'xe.livetable.${key}': ${escapetool.d}originalMsg.get('xe.livetable.${key}'),
-#end
-#foreach($key in ['page', 'page.title', 'page.previous', 'page.prev.title', 'page.next', 'page.next.title', 'results.none', 'results.one', 'results.single', 'results.many'])
-#if($velocityCount &gt; 1)
+  '${shortName}.livetable.$column': '$escapetool.javascript($translatedColumnName)'##
+#if($velocityCount &lt; $columns.size())
 ,
 #end
-  'xe.pagination.${key}': ${escapetool.d}originalMsg.get('xe.pagination.${key}')##
-#end
+#end## Selected columns
 
-})
+}))
 #end
 
 #macro(prepareColumnProperties)
@@ -103,8 +95,12 @@ $separator
   '$escapetool.javascript($column)': {'type': '$type', 'size': 10, 'filterable': true, 'sortable': true, 'html': $isHTML}##
 #set($separator = ',')
 #elseif($genericColumns.contains($column))
+#set($link = 'view')
+#if($column == 'doc.creator' || $column == 'doc.author')
+#set($link = 'author')
+#end
 $separator
-  '$column': {'type': 'text', 'link': 'view', 'size': #if($column == 'doc.title')20#{else}10#end, 'filterable': true, 'sortable': true}##
+  '$column': {'type': 'text', 'link': '$link', 'size': #if($column == 'doc.title')20#{else}10#end, 'filterable': true, 'sortable': true}##
 #set($separator = ',')
 #elseif($specialColumns.contains($column))
 $separator
@@ -129,6 +125,8 @@ $separator
 
 #macro(generateLiveTable)
 {{{##
+{{include document="AppWithinMinutes.DynamicMessageTool" context="new" /}}
+
 {{velocity}}
 #set($className = $liveTableObj.getProperty('class').value)
 #set($classDoc = $xwiki.getDocument($className))

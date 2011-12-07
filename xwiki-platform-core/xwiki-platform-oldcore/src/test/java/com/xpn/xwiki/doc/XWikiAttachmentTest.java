@@ -17,16 +17,28 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.xwiki.extension.jar.internal.handler;
+package com.xpn.xwiki.doc;
 
-import org.xwiki.component.annotation.ComponentRole;
+import org.jmock.cglib.MockObjectTestCase;
 
-@ComponentRole
-public interface JarExtensionClassLoader
+/**
+ * Unit tests for {@link XWikiAttachment}.
+ *
+ * @version $Id$
+ */
+public class XWikiAttachmentTest extends MockObjectTestCase
 {
-    ExtensionURLClassLoader getURLClassLoader(String namespace, boolean create);
-
-    void dropURLClassLoaders();
-
-    void dropURLClassLoader(String namespace);
+    public void testGetVersionList() throws Exception
+    {
+        final XWikiAttachment attach = new XWikiAttachment();
+        attach.setVersion("1.1");
+        assertEquals("Version list was not one element long for version 1.1", 1,
+                     attach.getVersionList().size());
+        attach.setVersion("1.2");
+        assertEquals("Version list was not two elements long for version 1.2.", 2,
+                     attach.getVersionList().size());
+        attach.setVersion("1.3");
+        assertEquals("Version list was not two elements long for version 1.3.", 3,
+                     attach.getVersionList().size());
+    }
 }
