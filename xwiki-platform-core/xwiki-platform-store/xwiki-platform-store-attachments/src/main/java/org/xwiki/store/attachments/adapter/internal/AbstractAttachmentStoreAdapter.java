@@ -65,7 +65,7 @@ public abstract class AbstractAttachmentStoreAdapter<T>
     private AttachmentArchiveStore<? super T> archiveStore;
 
     /** If false then archiveStore is assumed to be incompatible and not used. */
-    private boolean useArchiveStore = true;
+    private boolean shouldUseArchiveStore = true;
 
     /**
      * The Constructor.
@@ -181,6 +181,7 @@ public abstract class AbstractAttachmentStoreAdapter<T>
                     } else {
                         final List<XWikiAttachment> versions =
                             AttachmentTools.getVersionsForArchive(archive, context);
+
                         this.archiveStore
                             .getAttachmentArchiveSaveRunnable(versions)
                                 .runIn(transaction);
@@ -326,18 +327,20 @@ public abstract class AbstractAttachmentStoreAdapter<T>
     {
         if (this.archiveStore != null) {
             return true;
-        } else if (!this.useArchiveStore) {
+        } else if (!this.shouldUseArchiveStore) {
             return false;
         }
 
         final AttachmentVersioningStore avs = context.getWiki().getAttachmentVersioningStore();
         if (avs instanceof AbstractAttachmentVersioningStoreAdapter) {
+
             final Class<?> versioningTxType =
                 ((AbstractAttachmentVersioningStoreAdapter) avs).getTransactionType();
 
             if (versioningTxType.isAssignableFrom(this.transactionType)) {
-                this.archiveStore = (AttachmentArchiveStore<? super T>) archiveStore;
-                this.useArchiveStore = true;
+                this.archiveStore = (AttachmentArchiveStore<? super T>) 
+                    ((AbstractAttachmentVersioningStoreAdapter) avs).getArchiveStore();
+                this.shouldUseArchiveStore = true;
                 return true;
             }
         }
@@ -349,7 +352,7 @@ public abstract class AbstractAttachmentStoreAdapter<T>
                     avs.getClass().getName(),
                     this.getClass().getName());
 
-        this.useArchiveStore = false;
+        this.shouldUseArchiveStore = false;
         return false;
     }
 
