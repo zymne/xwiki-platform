@@ -43,7 +43,8 @@ public interface DeletedAttachmentContentStore<T>
      * Save the archive of an attachment.
      * Only the content, archive, and metadata will be stored,
      * not the deleted attachment metadata such as who deleted it and when.
-     * The attachment content and attachment archive must be loaded first.
+     * The attachment content and attachment archive will be loaded first.
+     * (attach.getAttachment_content() and attach.getAttachment_archive() will *not* return null).
      * and the attachment must be attached to a document.
      *
      * @param attachmentVersions each version of the attachment from the
@@ -66,7 +67,10 @@ public interface DeletedAttachmentContentStore<T>
      * @param dateOfDeletion the time when the attachment was deleted, this is used in case the
      *                       same attachment was deleted, undeleted and deleted again.
      * @param outputVersions a list which will be populated with all versions of the attachment
-     *                       which are found in the store.
+     *                       which are found in the store. These are in no particular order but must
+     *                       all have attachment content and archive loaded, that is to say,
+     *                       attach.getAttachment_content() and attach.getAttachment_archive() must
+     *                       never return null for any of the elements.
      * @return a TransactionRunnable which will load the content.
      */
     TransactionRunnable<T> getDeletedAttachmentContentLoadRunnable(

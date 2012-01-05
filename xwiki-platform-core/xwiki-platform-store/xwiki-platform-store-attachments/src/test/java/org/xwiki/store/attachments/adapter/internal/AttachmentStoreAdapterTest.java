@@ -19,31 +19,18 @@
  */
 package org.xwiki.store.attachments.adapter.internal;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
-//import org.xwiki.store.legacy.doc.internal.FilesystemAttachmentContent;
 import com.xpn.xwiki.doc.XWikiAttachment;
 import com.xpn.xwiki.doc.XWikiAttachmentArchive;
 import com.xpn.xwiki.doc.XWikiAttachmentContent;
 import com.xpn.xwiki.doc.XWikiDocument;
 import com.xpn.xwiki.store.AttachmentVersioningStore;
-import com.xpn.xwiki.store.XWikiHibernateStore;
+import com.xpn.xwiki.store.XWikiStoreInterface;
 import com.xpn.xwiki.web.Utils;
 import com.xpn.xwiki.XWiki;
 import com.xpn.xwiki.XWikiContext;
-import javax.inject.Provider;
-import org.apache.commons.io.IOUtils;
-import org.hibernate.Session;
 import org.jmock.Expectations;
 import org.jmock.Mockery;
 import org.jmock.api.Invocation;
@@ -51,34 +38,22 @@ import org.jmock.integration.junit4.JMock;
 import org.jmock.integration.junit4.JUnit4Mockery;
 import org.jmock.lib.action.CustomAction;
 import org.jmock.lib.legacy.ClassImposteriser;
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-//import org.xwiki.model.internal.reference.PathStringEntityReferenceSerializer;
-import org.xwiki.model.reference.DocumentReference;
 import org.xwiki.store.attachments.newstore.internal.AttachmentContentStore;
 import org.xwiki.store.attachments.newstore.internal.AttachmentStore;
-//import org.xwiki.store.attachments.newstore.internal.FilesystemAttachmentContentStore;
-//import org.xwiki.store.attachments.adapter.internal.FilesystemHibernateAttachmentStoreAdapter;
-//import org.xwiki.store.attachments.util.internal.DefaultFilesystemStoreTools;
-//import org.xwiki.store.attachments.util.internal.FilesystemStoreTools;
-//import org.xwiki.store.locks.preemptive.internal.PreemptiveLockProvider;
-import org.xwiki.store.StartableTransactionRunnable;
 import org.xwiki.store.TransactionRunnable;
-import org.xwiki.test.AbstractMockingComponentTestCase;
-//import org.xwiki.store.attachments.adapter.internal.FilesystemHibernateAttachmentStoreAdapter;
-
 import org.xwiki.component.manager.ComponentManager;
 import org.xwiki.store.attachments.newstore.internal.AttachmentArchiveStore;
 import org.suigeneris.jrcs.rcs.Version;
 
 /**
- * Tests for FilesystemAttachmentStore.
+ * Tests for AbstractAttachmentStoreAdapter.
  *
  * @version $Id$
- * @since 3.0M2
+ * @since TODO
  */
 @RunWith(JMock.class)
 public class AttachmentStoreAdapterTest
@@ -136,8 +111,6 @@ public class AttachmentStoreAdapterTest
             allowing(mockContext).getWiki(); will(returnValue(mockXWiki));
 
             // attachment, content, archive
-            //allowing(mockAttach).getContentInputStream(mockContext); will(returnValue(HELLO_STREAM));
-            //allowing(mockDirtyContent).getContentInputStream(); will(returnValue(HELLO_STREAM));
             allowing(mockAttach).getDoc(); will(returnValue(mockDocument));
             allowing(mockAttach).getFilename(); will(returnValue("file.name"));
             allowing(mockAttach).updateContentArchive(mockContext);
@@ -237,6 +210,8 @@ public class AttachmentStoreAdapterTest
     public void deleteAttachmentTest() throws Exception
     {
         final TestingTransactionRunnable attachDeleteTr = new TestingTransactionRunnable();
+        final TestingTransactionRunnable contentDeleteTr = new TestingTransactionRunnable();
+        final TestingTransactionRunnable archiveDeleteTr = new TestingTransactionRunnable();
 
         final AttachmentVersioningStore versioningStore =
             new TestingAttachmentVersioningStoreAdapter(this.mockArchiveStore, Object.class);
@@ -244,68 +219,85 @@ public class AttachmentStoreAdapterTest
         this.jmockContext.checking(new Expectations() {{
             oneOf(mockXWiki).getAttachmentVersioningStore(); will(returnValue(versioningStore));
             oneOf(mockContentStore).getAttachmentContentDeleteRunnable(mockAttach);
-                will(returnValue(attachDeleteTr));
-
-//            oneOf(mockAttachVersionStore).deleteArchive(mockAttach, mockContext, false);
+                will(returnValue(contentDeleteTr));
+            oneOf(mockArchiveStore).getAttachmentArchiveDeleteRunnable(mockAttach);
+                will(returnValue(archiveDeleteTr));
+            oneOf(mockMetaStore).getAttachmentDeleteRunnable(with(any(List.class)));
+                will(new CustomAction("Make sure the list contains the actual attachment.")
+                {
+                    public Object invoke(final Invocation invoc)
+                    {
+                        final List l = (List) invoc.getParameter(0);
+                        Assert.assertTrue("List was not one item long.", l.size() == 1);
+                        Assert.assertEquals("Wrong element in list.", mockAttach, l.get(0));
+                        return attachDeleteTr;
+                    }
+                });
         }});
-        //this.createFile();
 
         this.attachStore.deleteXWikiAttachment(this.mockAttach, false, this.mockContext, false);
         Assert.assertTrue("Attachment metadata was not deleted.",
                           attachDeleteTr.numberOfTimesCalled == 1);
-        //Assert.assertFalse("The attachment file was not deleted.", this.storeFile.exists());
+        Assert.assertTrue("Attachment content was not deleted.",
+                          contentDeleteTr.numberOfTimesCalled == 1);
+        Assert.assertTrue("Attachment archive was not deleted.",
+                          archiveDeleteTr.numberOfTimesCalled == 1);
     }
-/*
+
     @Test
     public void documentUpdateOnDeleteTest() throws Exception
     {
-        final List<XWikiAttachment> attachList = new ArrayList<XWikiAttachment>();
-        attachList.add(this.mockAttach);
-        this.doc.setAttachmentList(attachList);
+        final TestingTransactionRunnable attachDeleteTr = new TestingTransactionRunnable();
+        final TestingTransactionRunnable contentDeleteTr = new TestingTransactionRunnable();
+        final TestingTransactionRunnable archiveDeleteTr = new TestingTransactionRunnable();
+
+        final AttachmentVersioningStore versioningStore =
+            new TestingAttachmentVersioningStoreAdapter(this.mockArchiveStore, Object.class);
+
+        final XWikiStoreInterface mockStore = this.jmockContext.mock(XWikiStoreInterface.class);
 
         this.jmockContext.checking(new Expectations() {{
-            oneOf(mockAttachVersionStore).deleteArchive(mockAttach, mockContext, false);
-            oneOf(mockHibernate).saveXWikiDoc(doc, mockContext, false);
-            will(new CustomAction("Make sure the attachment has been removed from the list.")
-            {
-                public Object invoke(final Invocation invoc)
-                {
-                    final XWikiDocument document = (XWikiDocument) invoc.getParameter(0);
-                    Assert.assertTrue("Attachment was not removed from the list.",
-                        document.getAttachmentList().size() == 0);
-                    return null;
-                }
-            });
+            oneOf(mockXWiki).getAttachmentVersioningStore();
+                will(returnValue(versioningStore));
+            oneOf(mockXWiki).getStore();
+                will(returnValue(mockStore));
+            oneOf(mockContentStore).getAttachmentContentDeleteRunnable(mockAttach);
+                will(returnValue(contentDeleteTr));
+            oneOf(mockArchiveStore).getAttachmentArchiveDeleteRunnable(mockAttach);
+                will(returnValue(archiveDeleteTr));
+            oneOf(mockMetaStore).getAttachmentDeleteRunnable(with(any(List.class)));
+                returnValue(attachDeleteTr);
+            oneOf(mockDocument).getAttachmentList();
+                will(returnValue(new ArrayList<XWikiAttachment>(1){{ add(mockAttach); }}));
+            oneOf(mockStore).saveXWikiDoc(mockDocument, mockContext, false);
         }});
-        //this.createFile();
 
         this.attachStore.deleteXWikiAttachment(this.mockAttach, true, this.mockContext, false);
-        Assert.assertTrue("Attachment metadata was not deleted.",
-                          this.testingAttachmentDeleteTr.numberOfTimesCalled == 1);
     }
 
     @Test
     public void documentUpdateOnSaveTest() throws Exception
     {
+        final TestingTransactionRunnable attachmentSaveTr = new TestingTransactionRunnable();
+        final TestingTransactionRunnable archiveSaveTr = new TestingTransactionRunnable();
+
+        final AttachmentVersioningStore versioningStore =
+            new TestingAttachmentVersioningStoreAdapter(this.mockArchiveStore, Object.class);
+
+        final XWikiStoreInterface mockStore = this.jmockContext.mock(XWikiStoreInterface.class);
+
         this.jmockContext.checking(new Expectations() {{
-            oneOf(mockHibernate).saveXWikiDoc(doc, mockContext, false);
+            oneOf(mockXWiki).getStore();
+                will(returnValue(mockStore));
+            oneOf(mockXWiki).getAttachmentVersioningStore();
+                will(returnValue(versioningStore));
+            oneOf(mockContentStore).getAttachmentContentSaveRunnable(mockDirtyContent);
+                will(returnValue(attachmentSaveTr));
+            oneOf(mockArchiveStore).getAttachmentArchiveSaveRunnable(with(any(List.class)));
+                will(returnValue(archiveSaveTr));
+            oneOf(mockStore).saveXWikiDoc(mockDocument, mockContext, false);
         }});
 
         this.attachStore.saveAttachmentContent(this.mockAttach, true, this.mockContext, false);
-    }
-*/
-    /* -------------------- Helpers -------------------- */
-
-
-
-    /** Used for making assertions that a TR has been run. */
-    private static class TestingTransactionRunnable<T> extends TransactionRunnable<T>
-    {
-        public int numberOfTimesCalled;
-
-        public void onRun()
-        {
-            this.numberOfTimesCalled++;
-        }
     }
 }

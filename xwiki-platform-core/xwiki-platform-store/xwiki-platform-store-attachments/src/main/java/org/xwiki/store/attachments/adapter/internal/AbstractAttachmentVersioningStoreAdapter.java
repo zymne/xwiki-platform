@@ -31,12 +31,12 @@ import org.xwiki.store.StartableTransactionRunnable;
 import org.xwiki.store.TransactionRunnable;
 
 /**
- * An adaptor between com.xpn.xwiki.store.AttachmentVersioningStore
+ * An adapter between com.xpn.xwiki.store.AttachmentVersioningStore
  * and org.xwiki.store.legacy.store.attachments.internal.AttachmentArchiveStore.
  *
  * @version $Id$
  * @param <T> The transaction type.
- * @since 3.3M2
+ * @since TODO
  */
 public abstract class AbstractAttachmentVersioningStoreAdapter<T>
     implements AttachmentVersioningStore

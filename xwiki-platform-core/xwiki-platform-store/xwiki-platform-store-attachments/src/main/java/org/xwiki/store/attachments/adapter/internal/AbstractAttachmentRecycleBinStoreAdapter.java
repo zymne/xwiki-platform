@@ -29,6 +29,7 @@ import com.xpn.xwiki.doc.XWikiDocument;
 import com.xpn.xwiki.store.AttachmentRecycleBinStore;
 import com.xpn.xwiki.XWikiContext;
 import com.xpn.xwiki.XWikiException;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xwiki.model.reference.AttachmentReference;
@@ -155,13 +156,11 @@ public abstract class AbstractAttachmentRecycleBinStoreAdapter<T>
         if (attachment.getDoc() == null) {
             throw new XWikiException(XWikiException.MODULE_XWIKI_STORE,
                 XWikiException.MODULE_XWIKI,
-                "Cannot load deleted attachments because the given attachment "
-                    + attachment.getFilename() + " is not attached to any document.");
+                "Cannot load deleted attachments because the given attachment ["
+                    + attachment.getFilename() + "] is not associated with any document.");
         }
 
-        // I don't know that there is no way to upload an attachment named ""
-        // so I don't want to use isEmpty here.
-        if (attachment.getFilename() == null) {
+        if (StringUtils.isBlank(attachment.getFilename())) {
             return this.getAllDeletedAttachments(attachment.getDoc(), context, false);
         }
 
@@ -241,7 +240,7 @@ public abstract class AbstractAttachmentRecycleBinStoreAdapter<T>
                 throw new XWikiException(XWikiException.MODULE_XWIKI_STORE,
                                          XWikiException.MODULE_XWIKI,
                                          "Failed to purge deleted attachment from storage "
-                                         + "id number " + index,
+                                         + "id number [" + index + "]",
                                          e);
             }
         }

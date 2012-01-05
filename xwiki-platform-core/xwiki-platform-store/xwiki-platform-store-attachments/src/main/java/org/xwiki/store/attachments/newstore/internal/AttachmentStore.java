@@ -61,7 +61,7 @@ public interface AttachmentStore<T>
                                                      final List<XWikiAttachment> output);
 
     /**
-     * Delete an attachment.
+     * Delete one or more attachments.
      * Only metadata will be deleted, content and archive must be deleted seperately.
      *
      * @param toDelete the attachments to be deleted, each of these must be attached to a document
