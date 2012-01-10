@@ -53,7 +53,7 @@ public class FilesystemHibernateAttachmentStoreAdapter
     private AttachmentStore<Session> metaStore;
 
     /** A means of getting a transaction to run the attachment save operation in. */
-    @Named("configured")
+    @Named("hibernate")
     @Inject
     private Provider<StartableTransactionRunnable<Session>> provider;
 

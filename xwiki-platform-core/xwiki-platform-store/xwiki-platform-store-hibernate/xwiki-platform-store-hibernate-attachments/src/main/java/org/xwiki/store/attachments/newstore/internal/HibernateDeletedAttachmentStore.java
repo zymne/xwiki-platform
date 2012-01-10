@@ -160,7 +160,7 @@ public class HibernateDeletedAttachmentStore implements DeletedAttachmentStore<S
      * This uses a bad method of getting the document id by setting the reference in a special
      * document to the one given then asking that document it's id.
      * It's done this way because the only way to get a document id at the moment is to have a
-     * document and one synchronization to use the shared document is better than the million
+     * document and one synchronization to use the shared document is better than all of the
      * synchronizations which happen in the XWikiDocument constructor.
      *
      * @param reference the document reference to turn into an id.

@@ -73,6 +73,13 @@
       <version>${project.version}</version>
     </dependency>
 
+    <!-- HibernateAttachmentStore and HibernateDeletedAttachmentStore -->
+    <dependency>
+      <groupId>org.xwiki.platform</groupId>
+      <artifactId>xwiki-platform-store-hibernate-attachments</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
     <!-- FileSaveTransactionRunnable, FileDeleteTransactionRunnable -->
     <dependency>
       <groupId>org.xwiki.platform</groupId>

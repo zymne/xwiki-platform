@@ -1,0 +1,2 @@
+org.xwiki.store.attachments.hibernate.internal.HibernateAttachmentStore
+org.xwiki.store.attachments.newstore.internal.HibernateDeletedAttachmentStore

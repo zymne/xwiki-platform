@@ -22,7 +22,11 @@ package org.xwiki.store.hibernate;
 import com.xpn.xwiki.store.XWikiHibernateBaseStore;
 import com.xpn.xwiki.XWikiContext;
 import com.xpn.xwiki.XWikiException;
+import javax.inject.Inject;
+import javax.inject.Named;
 import org.hibernate.Session;
+import org.xwiki.component.annotation.Component;
+import org.xwiki.context.Execution;
 import org.xwiki.store.RootTransactionRunnable;
 
 /**
@@ -31,15 +35,22 @@ import org.xwiki.store.RootTransactionRunnable;
  * SQL storage engines are incapable of rolling back after commit.
  *
  * @version $Id$
- * @since 3.3M2
+ * @since TODO
  */
+@Component
+@Named("hibernate")
 public class HibernateTransaction extends RootTransactionRunnable<Session>
+    implements Transaction, Initializable
 {
     /** The storage engine. */
-    private final XWikiHibernateBaseStore store;
+    private XWikiHibernateBaseStore store;
 
     /** The XWikiContext associated with the request which started this Transaction. */
-    private final XWikiContext context;
+    private XWikiContext context;
+
+    /** The execution for getting the XWikiContext. */
+    @Inject
+    private Execution exec;
 
     /**
      * True if the transaction should be ended when finished.
@@ -49,7 +60,7 @@ public class HibernateTransaction extends RootTransactionRunnable<Session>
     private boolean shouldCloseTransaction;
 
     /**
-     * The Constructor.
+     * Testing Constructor.
      *
      * @param context the XWikiContext associated with the request which started this Transaction.
      */
@@ -57,6 +68,21 @@ public class HibernateTransaction extends RootTransactionRunnable<Session>
     {
         this.store = context.getWiki().getHibernateStore();
         this.context = context;
+    }
+
+    /**
+     * Component Manager Constructor.
+     */
+    public HibernateTransaction()
+    {
+        // Fields will be filled in by component manager.
+    }
+
+    @Override
+    public void initialize()
+    {
+        this.context = (XWikiContext) this.exec.getContext().getProperty("xwiki-context");
+        this.store = context.getWiki().getHibernateStore();
     }
 
     @Override
