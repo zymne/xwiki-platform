@@ -17,7 +17,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.xwiki.store.hibernate;
+package org.xwiki.store.hibernate.internal;
 
 import com.xpn.xwiki.store.XWikiHibernateBaseStore;
 import com.xpn.xwiki.XWikiContext;
@@ -40,7 +40,6 @@ import org.xwiki.store.RootTransactionRunnable;
 @Component
 @Named("hibernate")
 public class HibernateTransaction extends RootTransactionRunnable<Session>
-    implements Transaction, Initializable
 {
     /** The storage engine. */
     private XWikiHibernateBaseStore store;
@@ -68,21 +67,6 @@ public class HibernateTransaction extends RootTransactionRunnable<Session>
     {
         this.store = context.getWiki().getHibernateStore();
         this.context = context;
-    }
-
-    /**
-     * Component Manager Constructor.
-     */
-    public HibernateTransaction()
-    {
-        // Fields will be filled in by component manager.
-    }
-
-    @Override
-    public void initialize()
-    {
-        this.context = (XWikiContext) this.exec.getContext().getProperty("xwiki-context");
-        this.store = context.getWiki().getHibernateStore();
     }
 
     @Override

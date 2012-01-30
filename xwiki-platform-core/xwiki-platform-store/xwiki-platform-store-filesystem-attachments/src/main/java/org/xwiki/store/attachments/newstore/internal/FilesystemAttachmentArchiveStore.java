@@ -150,10 +150,10 @@ public class FilesystemAttachmentArchiveStore implements AttachmentArchiveStore
             @Override
             protected void onRun() throws IOException
             {
+                (System.out).println("\n\n\n\n\n\n\n\n\nTEST\n\n\n\n\n\n\n\n\n");
                 final InputStream is = new FileInputStream(metaFile);
                 final List<XWikiAttachment> attachList = mSerializer.parse(is);
                 is.close();
-
                 for (XWikiAttachment attach : attachList) {
                     attach.setAttachment_content(
                         new FilesystemAttachmentContent(

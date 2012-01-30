@@ -45,14 +45,7 @@ public class FilesystemAttachmentVersioningStoreAdapter
     private AttachmentArchiveStore archiveStore;
 
     /** A means of getting a transaction to run the attachment save operation in. */
-    private Provider<StartableTransactionRunnable> provider =
-        new Provider<StartableTransactionRunnable>() {
-            @Override
-            public StartableTransactionRunnable get()
-            {
-                return new StartableTransactionRunnable();
-            }
-        };
+    private Provider<StartableTransactionRunnable> provider;
 
     /**
      * Testing Constructor.

@@ -27,10 +27,10 @@
   <parent>
     <groupId>org.xwiki.platform</groupId>
     <artifactId>xwiki-platform-store-hibernate</artifactId>
-    <version>3.3-SNAPSHOT</version>
+    <version>3.4-SNAPSHOT</version>
   </parent>
-  <artifactId>xwiki-platform-store-hibernate-attachments</artifactId>
-  <name>XWiki Platform - Store - Hibernate - Attachments</name>
+  <artifactId>xwiki-platform-store-hibernate-transaction</artifactId>
+  <name>XWiki Platform - Store - Hibernate - Transaction</name>
   <description>See: README</description>
   <dependencies>
     <dependency>
@@ -39,9 +39,7 @@
       <version>${project.version}</version>
     </dependency>
 
-    <!--
-      * needed for the XWikiAttachment, XWikiAttachmentArchive, and DeletedAttachment classes
-      -->
+    <!-- needed for the XWikiHibernateBaseStore, and XWikiContext. -->
     <dependency>
       <groupId>org.xwiki.platform</groupId>
       <artifactId>xwiki-platform-oldcore</artifactId>

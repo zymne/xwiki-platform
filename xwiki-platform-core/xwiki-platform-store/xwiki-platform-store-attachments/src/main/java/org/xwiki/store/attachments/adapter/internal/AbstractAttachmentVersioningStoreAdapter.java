@@ -75,6 +75,8 @@ public abstract class AbstractAttachmentVersioningStoreAdapter<T>
             final TransactionRunnable<T> tr =
                 this.getArchiveStore().getAttachmentArchiveLoadRunnable(attachment);
             tr.runIn(transaction);
+            (System.out).println("\n\n\n\n\n\n\n\n\nTEST2\n\n\n\n\n\n\n\n\n");
+            transaction.start();
         } catch (Exception e) {
             AttachmentTools.throwXWikiException("Exception while loading attachment archive",
                                                 e,

@@ -105,4 +105,12 @@
     code review easy in the place where it is most important. This part of the code is entirely generic
     and has no dependence on any type of underlying transactional storage engine.
   </description>
+  <dependencies>
+    <!-- Provider and ComponentRole needed for TransactionProvider -->
+    <dependency>
+      <groupId>org.xwiki.commons</groupId>
+      <artifactId>xwiki-commons-component-api</artifactId>
+      <version>${commons.version}</version>
+    </dependency>
+  </dependencies>
 </project>
