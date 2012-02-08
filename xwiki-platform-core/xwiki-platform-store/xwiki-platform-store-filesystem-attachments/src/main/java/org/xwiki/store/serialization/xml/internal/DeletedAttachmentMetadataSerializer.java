@@ -29,8 +29,8 @@ import javax.inject.Singleton;
 import org.dom4j.Element;
 import org.dom4j.dom.DOMElement;
 import org.xwiki.component.annotation.Component;
-import org.xwiki.store.legacy.doc.internal.DeletedFilesystemAttachment;
-import org.xwiki.store.legacy.doc.internal.MutableDeletedFilesystemAttachment;
+import org.xwiki.store.attachments.legacy.doc.internal.DeletedFilesystemAttachment;
+import org.xwiki.store.attachments.legacy.doc.internal.MutableDeletedFilesystemAttachment;
 import org.xwiki.store.serialization.xml.XMLSerializer;
 
 /**

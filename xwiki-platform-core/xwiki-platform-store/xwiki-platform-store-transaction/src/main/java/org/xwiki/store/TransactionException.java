@@ -123,6 +123,14 @@ public class TransactionException extends Exception
         return new ArrayList<Throwable>(this.causes);
     }
 
+    @Override
+    // Some loggers really want all exceptions to implement getCause(),
+    // we'll give the first cause and hope there was only one exception which happened.
+    public Throwable getCause()
+    {
+        return this.causes.get(0);
+    }
+
     /**
      * @return the total number of exceptions which caused this exception to be thrown.
      */

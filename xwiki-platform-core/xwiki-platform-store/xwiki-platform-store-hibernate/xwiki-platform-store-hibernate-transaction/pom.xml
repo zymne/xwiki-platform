@@ -33,6 +33,14 @@
   <name>XWiki Platform - Store - Hibernate - Transaction</name>
   <description>See: README</description>
   <dependencies>
+
+    <!-- UnexpectedException -->
+    <dependency>
+      <groupId>org.xwiki.platform</groupId>
+      <artifactId>xwiki-platform-store-api</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
     <dependency>
       <groupId>org.xwiki.platform</groupId>
       <artifactId>xwiki-platform-store-transaction</artifactId>

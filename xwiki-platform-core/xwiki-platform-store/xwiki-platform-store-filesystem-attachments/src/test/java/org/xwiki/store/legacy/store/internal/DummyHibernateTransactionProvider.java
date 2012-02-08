@@ -19,9 +19,9 @@
  */
 package org.xwiki.store.legacy.store.internal;
 
-import javax.inject.Provider;
 import org.hibernate.Session;
 import org.xwiki.store.StartableTransactionRunnable;
+import org.xwiki.store.TransactionProvider;
 
 /**
  * TransactionProvider which provides fake hibernate transactions which do nothing.
@@ -29,8 +29,7 @@ import org.xwiki.store.StartableTransactionRunnable;
  * @version $Id$
  * @since 3.3M2
  */
-public class DummyHibernateTransactionProvider
-    implements Provider<StartableTransactionRunnable<Session>>
+public class DummyHibernateTransactionProvider implements TransactionProvider<Session>
 {
     @Override
     public StartableTransactionRunnable<Session> get()

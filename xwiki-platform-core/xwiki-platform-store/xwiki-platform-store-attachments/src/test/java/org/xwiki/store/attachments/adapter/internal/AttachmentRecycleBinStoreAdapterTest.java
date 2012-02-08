@@ -43,6 +43,8 @@ import org.xwiki.model.EntityType;
 import org.xwiki.model.reference.AttachmentReference;
 import org.xwiki.model.reference.DocumentReference;
 import org.xwiki.model.reference.EntityReferenceResolver;
+import org.xwiki.store.attachments.legacy.doc.internal.ExternalContentDeletedAttachment;
+import org.xwiki.store.attachments.legacy.doc.internal.ListAttachmentArchive;
 import org.xwiki.store.attachments.newstore.internal.DeletedAttachmentContentStore;
 import org.xwiki.store.attachments.newstore.internal.DeletedAttachmentStore;
 import org.xwiki.store.TransactionRunnable;
@@ -70,8 +72,8 @@ public class AttachmentRecycleBinStoreAdapterTest
         this.jmockContext.mock(XWikiAttachment.class);
     private final XWikiAttachmentArchive mockArchive =
         this.jmockContext.mock(XWikiAttachmentArchive.class);
-    private final DeletedAttachment mockDeletedAttach =
-        this.jmockContext.mock(DeletedAttachment.class);
+    private final ExternalContentDeletedAttachment mockDeletedAttach =
+        this.jmockContext.mock(ExternalContentDeletedAttachment.class);
 
 
     // needed by the trash store.
@@ -115,9 +117,17 @@ public class AttachmentRecycleBinStoreAdapterTest
                 will(returnValue("file.txt"));
             allowing(mockDeletedAttach).getDate();
                 will(returnValue(now));
+            allowing(mockDeletedAttach).setAttachment(with(mockAttach),
+                                                      with(any(XWikiContext.class)));
 
             allowing(mockResolver).resolve("XWiki.User", EntityType.DOCUMENT);
                 will(returnValue(userRef));
+
+            allowing(mockAttach).getId();
+                will(returnValue(1L));
+            allowing(mockAttach).getFilename();
+                will(returnValue("file.txt"));
+            allowing(mockAttach).setAttachment_archive(with(any(ListAttachmentArchive.class)));
 
             allowing(mockTrashMetaStore)
                 .getDeletedAttachmentLoadRunnable(with(attachRef), with(any(List.class)));
@@ -196,7 +206,6 @@ public class AttachmentRecycleBinStoreAdapterTest
         final ListPopulatingTransactionRunnable attachContentLoadTr =
             new ListPopulatingTransactionRunnable(new ArrayList(1) {{ add(mockAttach); }});
 
-
         this.jmockContext.checking(new Expectations() {{
             oneOf(mockTrashContentStore)
                 .getDeletedAttachmentContentLoadRunnable(with(equal(attachRef)),
@@ -231,9 +240,10 @@ public class AttachmentRecycleBinStoreAdapterTest
         final TestingTransactionRunnable attachContentPurgeTr = new TestingTransactionRunnable();
 
         this.jmockContext.checking(new Expectations() {{
-            oneOf(mockTrashMetaStore).getDeletedAttachmentPurgeRunnable(with(equal(attachRef)),
-                                                                        with(mockDeletedAttach));
-                will(returnValue(attachMetaPurgeTr));
+            oneOf(mockTrashMetaStore).getDeletedAttachmentPurgeRunnable(
+                with(equal(attachRef)),
+                with(mockDeletedAttach.getDate()));
+                    will(returnValue(attachMetaPurgeTr));
             oneOf(mockTrashContentStore)
                .getDeletedAttachmentContentPurgeRunnable(with(equal(attachRef)), with(now));
                 will(returnValue(attachContentPurgeTr));

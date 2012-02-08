@@ -22,6 +22,7 @@ package org.xwiki.store.attachments.newstore.internal;
 import java.util.List;
 
 import com.xpn.xwiki.doc.XWikiAttachment;
+import org.xwiki.model.reference.AttachmentReference;
 import org.xwiki.component.annotation.ComponentRole;
 import org.xwiki.store.TransactionRunnable;
 
@@ -51,18 +52,20 @@ public interface AttachmentArchiveStore<T>
      * The archive will be placed in the attachment object.
      * The attachment must be attached to a document.
      *
-     * @param attachment an attachment, this must be attached to a document.
+     * @param ref the reference to the attachment.
+     * @param versions an empty list to be populated with the versions of the attachment.
      * @return a new TransactionRunnable to load archive for the given attachment.
      */
-    TransactionRunnable<T> getAttachmentArchiveLoadRunnable(final XWikiAttachment attachment);
+    TransactionRunnable<T> getAttachmentArchiveLoadRunnable(final AttachmentReference ref,
+                                                            final List<XWikiAttachment> versions);
 
     /**
      * Delete the attachment archive.
      * Neither metadata not content will not be deleted, only the archive.
      * The attachment must be attached to a document.
      *
-     * @param attachment an attachment, this must be attached to a document.
+     * @param ref the reference to the attachment.
      * @return a new TransactionRunnable to delete the attachment archive.
      */
-    TransactionRunnable<T> getAttachmentArchiveDeleteRunnable(final XWikiAttachment attachment);
+    TransactionRunnable<T> getAttachmentArchiveDeleteRunnable(final AttachmentReference ref);
 }

@@ -23,7 +23,6 @@ import java.io.File;
 import java.util.Date;
 import java.util.Map;
 
-import com.xpn.xwiki.doc.XWikiAttachment;
 import org.xwiki.component.annotation.ComponentRole;
 import org.xwiki.model.reference.DocumentReference;
 import org.xwiki.model.reference.AttachmentReference;
@@ -43,13 +42,12 @@ public interface FilesystemStoreTools
 {
     /**
      * Get an instance of AttachmentFileProvider which will save everything to do with an attachment
-     * in a separate location which is repeatable only with the same attachment name, and containing
-     * document.
+     * in a separate location which is repeatable only with the same attachment reference.
      *
-     * @param attachment the attachment to get a tools for.
+     * @param ref the reference to the attachment to get a provider for.
      * @return a provider which will provide files with collision free path and repeatable with same inputs.
      */
-    AttachmentFileProvider getAttachmentFileProvider(final XWikiAttachment attachment);
+    AttachmentFileProvider getAttachmentFileProvider(final AttachmentReference ref);
 
     /**
      * Get an instance of AttachmentFileProvider which will save everything to do with an attachment

@@ -26,22 +26,21 @@ import java.io.IOException;
 import java.util.List;
 
 import com.xpn.xwiki.doc.XWikiAttachment;
-import com.xpn.xwiki.XWikiException;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
-import org.suigeneris.jrcs.rcs.Version;
+import org.apache.commons.io.IOUtils;
 import org.xwiki.component.annotation.Component;
+import org.xwiki.model.reference.AttachmentReference;
+import org.xwiki.store.attachments.adapter.internal.AttachmentTools;
 import org.xwiki.store.attachments.util.internal.AttachmentContentStreamProvider;
 import org.xwiki.store.attachments.util.internal.AttachmentFileProvider;
 import org.xwiki.store.attachments.util.internal.FilesystemStoreTools;
-import org.xwiki.store.legacy.doc.internal.FilesystemAttachmentContent;
-import org.xwiki.store.legacy.doc.internal.ListAttachmentArchive;
+import org.xwiki.store.attachments.legacy.doc.internal.FilesystemAttachmentContent;
 import org.xwiki.store.serialization.SerializationStreamProvider;
 import org.xwiki.store.serialization.Serializer;
 import org.xwiki.store.StreamProvider;
 import org.xwiki.store.TransactionRunnable;
-import org.xwiki.store.UnexpectedException;
 
 /**
  * A filesystem based attachment archive store.
@@ -98,10 +97,8 @@ public class FilesystemAttachmentArchiveStore implements AttachmentArchiveStore
             return out;
         }
 
-        checkAttachedToDocument(versions.get(0));
-
-        final AttachmentFileProvider provider =
-            this.fileTools.getAttachmentFileProvider(versions.get(0));
+        final AttachmentReference ref = AttachmentTools.referenceForAttachment(versions.get(0));
+        final AttachmentFileProvider provider = this.fileTools.getAttachmentFileProvider(ref);
 
         for (final XWikiAttachment attachVer : versions) {
             final String verName = attachVer.getVersion();
@@ -124,23 +121,16 @@ public class FilesystemAttachmentArchiveStore implements AttachmentArchiveStore
     }
 
     @Override
-    public TransactionRunnable getAttachmentArchiveLoadRunnable(final XWikiAttachment attachment)
+    public TransactionRunnable getAttachmentArchiveLoadRunnable(final AttachmentReference ref,
+                                                                final List output)
     {
-        checkAttachedToDocument(attachment);
-
         final AttachmentFileProvider provider =
-            this.fileTools.getAttachmentFileProvider(attachment);
+            this.fileTools.getAttachmentFileProvider(ref);
         final File metaFile = provider.getAttachmentVersioningMetaFile();
 
-        // If no meta file then assume no archive and return an empty archive.
+        // If no meta file then assume no archive and do nothing.
         if (!metaFile.exists()) {
-            return new TransactionRunnable() {
-                @Override
-                protected void onRun()
-                {
-                    attachment.setAttachment_archive(new ListAttachmentArchive(attachment));
-                }
-            };
+            return new TransactionRunnable();
         }
 
         final Serializer<List<XWikiAttachment>,
@@ -150,7 +140,6 @@ public class FilesystemAttachmentArchiveStore implements AttachmentArchiveStore
             @Override
             protected void onRun() throws IOException
             {
-                (System.out).println("\n\n\n\n\n\n\n\n\nTEST\n\n\n\n\n\n\n\n\n");
                 final InputStream is = new FileInputStream(metaFile);
                 final List<XWikiAttachment> attachList = mSerializer.parse(is);
                 is.close();
@@ -158,38 +147,44 @@ public class FilesystemAttachmentArchiveStore implements AttachmentArchiveStore
                     attach.setAttachment_content(
                         new FilesystemAttachmentContent(
                             provider.getAttachmentVersionContentFile(attach.getVersion()), attach));
-                    // Pass the document since it will be lost in the serialize/deserialize.
-                    attach.setDoc(attachment.getDoc());
+                    output.add(attach);
                 }
-                final ListAttachmentArchive out = new ListAttachmentArchive(attachList);
-                out.setAttachment(attachment);
-                attachment.setAttachment_archive(out);
+                //final ListAttachmentArchive out = new ListAttachmentArchive(attachList);
+                //out.setAttachment(attachment);
+                //attachment.setAttachment_archive(out);
             }
         };
     }
 
     @Override
-    public TransactionRunnable getAttachmentArchiveDeleteRunnable(final XWikiAttachment attachment)
+    public TransactionRunnable getAttachmentArchiveDeleteRunnable(final AttachmentReference ref)
     {
-        checkAttachedToDocument(attachment);
-
-        final AttachmentFileProvider provider =
-            this.fileTools.getAttachmentFileProvider(attachment);
+        final AttachmentFileProvider provider = this.fileTools.getAttachmentFileProvider(ref);
         final TransactionRunnable out = new TransactionRunnable();
+        final File archiveMeta = provider.getAttachmentVersioningMetaFile();
+
+        final Serializer<List<XWikiAttachment>,
+                         List<XWikiAttachment>> mSerializer = this.metaSerializer;
+
+        (new TransactionRunnable() {
+            @Override
+            protected void onRun() throws IOException
+            {
+                if (archiveMeta.exists()) {
+                    InputStream is = null;
+                    try {
+                        is = new FileInputStream(archiveMeta);
+                        for (final XWikiAttachment ver : mSerializer.parse(is)) {
+                            provider.getAttachmentVersionContentFile(ver.getVersion()).delete();
+                        }
+                    } finally {
+                        IOUtils.closeQuietly(is);
+                    }
+                }
+            }
+        }).runIn(out);
+
         this.fileTools.getDeleter(provider.getAttachmentVersioningMetaFile()).runIn(out);
-
-        final List<Version> versions;
-        try {
-            versions = attachment.getVersionList();
-        } catch (XWikiException e) {
-            // As of this writing, XWikiAttachment.getVersonList() does not throw exceptions.
-            throw new UnexpectedException(e);
-        }
-
-        for (final Version ver : versions) {
-            final File file = provider.getAttachmentVersionContentFile(ver.toString());
-            this.fileTools.getDeleter(file).runIn(out);
-        }
 
         return out;
     }

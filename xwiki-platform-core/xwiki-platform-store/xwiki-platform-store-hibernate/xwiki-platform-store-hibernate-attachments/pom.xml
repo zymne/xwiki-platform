@@ -41,6 +41,13 @@
 
     <dependency>
       <groupId>org.xwiki.platform</groupId>
+      <artifactId>xwiki-platform-store-hibernate-transaction</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+
+    <dependency>
+      <groupId>org.xwiki.platform</groupId>
       <artifactId>xwiki-platform-store-attachments</artifactId>
       <version>${project.version}</version>
     </dependency>

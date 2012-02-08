@@ -27,6 +27,7 @@ import com.xpn.xwiki.doc.XWikiAttachmentArchive;
 import com.xpn.xwiki.XWikiContext;
 import com.xpn.xwiki.XWikiException;
 import org.suigeneris.jrcs.rcs.Version;
+import org.xwiki.model.reference.AttachmentReference;
 
 /**
  * Utilities for manipulating XWikiAttachments.
@@ -34,7 +35,7 @@ import org.suigeneris.jrcs.rcs.Version;
  * @version $Id$
  * @since 3.3M2
  */
-final class AttachmentTools
+public final class AttachmentTools
 {
     /** Private constructor for utility class. */
     private AttachmentTools()
@@ -117,5 +118,21 @@ final class AttachmentTools
                                  message + "{0} [{1}] from document [{2}]",
                                  exception,
                                  args);
+    }
+
+    /**
+     * Get an attachment reference for an attachment.
+     * This functionality will be in the next incarnation of XWikiAttachment.
+     *
+     * @param attachment the attachment to get the reference to.
+     * @return a reference to the attachment.
+     */
+    public static AttachmentReference referenceForAttachment(final XWikiAttachment attachment)
+    {
+        if (attachment.getDoc() == null) {
+            throw new NullPointerException("This attachment must be associated with a document.");
+        }
+        return new AttachmentReference(attachment.getFilename(),
+                                       attachment.getDoc().getDocumentReference());
     }
 }

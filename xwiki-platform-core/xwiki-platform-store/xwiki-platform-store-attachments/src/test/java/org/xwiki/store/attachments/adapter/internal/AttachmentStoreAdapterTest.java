@@ -42,6 +42,9 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.xwiki.model.reference.AttachmentReference;
+import org.xwiki.model.reference.DocumentReference;
+import org.xwiki.store.attachments.adapter.internal.AttachmentTools;
 import org.xwiki.store.attachments.newstore.internal.AttachmentContentStore;
 import org.xwiki.store.attachments.newstore.internal.AttachmentStore;
 import org.xwiki.store.TransactionRunnable;
@@ -75,6 +78,9 @@ public class AttachmentStoreAdapterTest
         this.jmockContext.mock(XWikiAttachmentContent.class);
     private final XWikiAttachmentArchive mockArchive =
         this.jmockContext.mock(XWikiAttachmentArchive.class);
+
+    // The document which holds the attachment.
+    private final DocumentReference documentRef = new DocumentReference("xwiki", "Main", "WebHome");
 
 
     // What we are testing.
@@ -125,6 +131,8 @@ public class AttachmentStoreAdapterTest
                 will(returnValue(new Version[] { new Version("1.1") }));
             allowing(mockArchive).getRevision(mockAttach, "1.1", mockContext);
                 will(returnValue(mockAttach));
+            allowing(mockDocument).getDocumentReference();
+                will(returnValue(documentRef));
         }});
 
         this.attachStore = new TestingAttachmentStoreAdapter(this.mockContentStore,
@@ -216,11 +224,13 @@ public class AttachmentStoreAdapterTest
         final AttachmentVersioningStore versioningStore =
             new TestingAttachmentVersioningStoreAdapter(this.mockArchiveStore, Object.class);
 
+        final AttachmentReference ref = AttachmentTools.referenceForAttachment(mockAttach);
+
         this.jmockContext.checking(new Expectations() {{
             oneOf(mockXWiki).getAttachmentVersioningStore(); will(returnValue(versioningStore));
             oneOf(mockContentStore).getAttachmentContentDeleteRunnable(mockAttach);
                 will(returnValue(contentDeleteTr));
-            oneOf(mockArchiveStore).getAttachmentArchiveDeleteRunnable(mockAttach);
+            oneOf(mockArchiveStore).getAttachmentArchiveDeleteRunnable(ref);
                 will(returnValue(archiveDeleteTr));
             oneOf(mockMetaStore).getAttachmentDeleteRunnable(with(any(List.class)));
                 will(new CustomAction("Make sure the list contains the actual attachment.")
@@ -254,6 +264,8 @@ public class AttachmentStoreAdapterTest
         final AttachmentVersioningStore versioningStore =
             new TestingAttachmentVersioningStoreAdapter(this.mockArchiveStore, Object.class);
 
+        final AttachmentReference ref = AttachmentTools.referenceForAttachment(mockAttach);
+
         final XWikiStoreInterface mockStore = this.jmockContext.mock(XWikiStoreInterface.class);
 
         this.jmockContext.checking(new Expectations() {{
@@ -263,7 +275,7 @@ public class AttachmentStoreAdapterTest
                 will(returnValue(mockStore));
             oneOf(mockContentStore).getAttachmentContentDeleteRunnable(mockAttach);
                 will(returnValue(contentDeleteTr));
-            oneOf(mockArchiveStore).getAttachmentArchiveDeleteRunnable(mockAttach);
+            oneOf(mockArchiveStore).getAttachmentArchiveDeleteRunnable(ref);
                 will(returnValue(archiveDeleteTr));
             oneOf(mockMetaStore).getAttachmentDeleteRunnable(with(any(List.class)));
                 returnValue(attachDeleteTr);

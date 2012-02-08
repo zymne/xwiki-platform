@@ -32,6 +32,7 @@ import com.xpn.xwiki.XWikiContext;
 import com.xpn.xwiki.XWikiException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.xwiki.model.reference.AttachmentReference;
 import org.xwiki.store.attachments.newstore.internal.AttachmentArchiveStore;
 import org.xwiki.store.attachments.newstore.internal.AttachmentContentStore;
 import org.xwiki.store.attachments.newstore.internal.AttachmentStore;
@@ -258,12 +259,12 @@ public abstract class AbstractAttachmentStoreAdapter<T>
         throws XWikiException
     {
         final StartableTransactionRunnable<T> transaction = this.getTransaction();
-
+        final AttachmentReference ref = AttachmentTools.referenceForAttachment(attachment);
         this.getContentStore().getAttachmentContentDeleteRunnable(attachment).runIn(transaction);
 
         // If the store supports deleting in the same transaction then do it.
         if (this.useArchiveStore(context)) {
-            this.archiveStore.getAttachmentArchiveDeleteRunnable(attachment).runIn(transaction);
+            this.archiveStore.getAttachmentArchiveDeleteRunnable(ref).runIn(transaction);
         } else {
             final AttachmentVersioningStore avs = context.getWiki().getAttachmentVersioningStore();
             (new TransactionRunnable() {

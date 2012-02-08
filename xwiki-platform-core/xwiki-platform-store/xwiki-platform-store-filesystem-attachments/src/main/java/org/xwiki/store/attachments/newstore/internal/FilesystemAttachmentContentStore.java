@@ -27,9 +27,11 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 import org.xwiki.component.annotation.Component;
+import org.xwiki.model.reference.AttachmentReference;
+import org.xwiki.store.attachments.adapter.internal.AttachmentTools;
+import org.xwiki.store.attachments.legacy.doc.internal.FilesystemAttachmentContent;
 import org.xwiki.store.attachments.util.internal.FilesystemStoreTools;
 import org.xwiki.store.attachments.util.internal.AttachmentContentStreamProvider;
-import org.xwiki.store.legacy.doc.internal.FilesystemAttachmentContent;
 import org.xwiki.store.StreamProvider;
 import org.xwiki.store.UnexpectedException;
 import org.xwiki.store.TransactionRunnable;
@@ -68,10 +70,12 @@ public class FilesystemAttachmentContentStore implements AttachmentContentStore
     @Override
     public TransactionRunnable getAttachmentContentSaveRunnable(final XWikiAttachmentContent content)
     {
+        final AttachmentReference ref =
+            AttachmentTools.referenceForAttachment(content.getAttachment());
+
         // This is the permanent location where the attachment content will go.
         final File attachFile =
-            this.fileTools.getAttachmentFileProvider(content.getAttachment())
-                .getAttachmentContentFile();
+            this.fileTools.getAttachmentFileProvider(ref).getAttachmentContentFile();
 
         final StreamProvider provider =
             new AttachmentContentStreamProvider(content);
@@ -81,8 +85,9 @@ public class FilesystemAttachmentContentStore implements AttachmentContentStore
     @Override
     public TransactionRunnable getAttachmentContentLoadRunnable(final XWikiAttachment attachment)
     {
+        final AttachmentReference ref = AttachmentTools.referenceForAttachment(attachment);
         final File attachFile =
-            this.fileTools.getAttachmentFileProvider(attachment).getAttachmentContentFile();
+            this.fileTools.getAttachmentFileProvider(ref).getAttachmentContentFile();
         return new TransactionRunnable() {
             @Override
             public void onRun()
@@ -102,8 +107,9 @@ public class FilesystemAttachmentContentStore implements AttachmentContentStore
     @Override
     public TransactionRunnable getAttachmentContentDeleteRunnable(final XWikiAttachment attachment)
     {
+        final AttachmentReference ref = AttachmentTools.referenceForAttachment(attachment);
         final File attachFile =
-            this.fileTools.getAttachmentFileProvider(attachment).getAttachmentContentFile();
+            this.fileTools.getAttachmentFileProvider(ref).getAttachmentContentFile();
         return this.fileTools.getDeleter(attachFile);
     }
 }

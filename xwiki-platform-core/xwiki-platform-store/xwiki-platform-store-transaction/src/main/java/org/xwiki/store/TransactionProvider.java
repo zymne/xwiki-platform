@@ -19,7 +19,6 @@
  */
 package org.xwiki.store;
 
-import javax.inject.Provider;
 import org.xwiki.component.annotation.ComponentRole;
 
 /**
@@ -30,7 +29,10 @@ import org.xwiki.component.annotation.ComponentRole;
  * @since TODO
  */
 @ComponentRole
-public interface TransactionProvider<T> extends Provider<StartableTransactionRunnable<T>>
+public interface TransactionProvider<T>
 {
-    // Just the default get method.
+    /**
+     * @return a StartableTransactionRunnable which represents a transaction in a given store.
+     */
+    StartableTransactionRunnable<T> get();
 }

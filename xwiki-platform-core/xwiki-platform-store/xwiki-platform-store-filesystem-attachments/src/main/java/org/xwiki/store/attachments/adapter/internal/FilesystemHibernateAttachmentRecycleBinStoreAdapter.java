@@ -23,7 +23,6 @@ import com.xpn.xwiki.XWikiContext;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
-import javax.inject.Provider;
 import org.hibernate.Session;
 import org.xwiki.component.annotation.Component;
 import org.xwiki.context.Execution;
@@ -36,6 +35,7 @@ import org.xwiki.store.attachments.newstore.internal.DeletedAttachmentContentSto
 import org.xwiki.store.attachments.newstore.internal.DeletedAttachmentStore;
 import org.xwiki.store.StartableTransactionRunnable;
 import org.xwiki.store.TransactionException;
+import org.xwiki.store.TransactionProvider;
 import org.xwiki.store.TransactionRunnable;
 import org.xwiki.store.UnexpectedException;
 
@@ -54,7 +54,7 @@ public class FilesystemHibernateAttachmentRecycleBinStoreAdapter
     /** The means of getting Hibernate transactions. */
     @Named("hibernate")
     @Inject
-    private Provider<StartableTransactionRunnable<Session>> transactionProvider;
+    private TransactionProvider<Session> transactionProvider;
 
     /** The metadata store which puts empty DeletedAttachment entries in the database. */
     @Named("hibernate")

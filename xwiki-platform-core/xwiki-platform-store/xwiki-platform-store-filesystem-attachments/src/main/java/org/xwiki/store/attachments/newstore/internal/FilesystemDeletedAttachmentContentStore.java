@@ -33,10 +33,10 @@ import javax.inject.Singleton;
 import org.apache.commons.io.IOUtils;
 import org.xwiki.component.annotation.Component;
 import org.xwiki.model.reference.AttachmentReference;
+import org.xwiki.store.attachments.legacy.doc.internal.FilesystemAttachmentContent;
 import org.xwiki.store.attachments.util.internal.AttachmentContentStreamProvider;
 import org.xwiki.store.attachments.util.internal.DeletedAttachmentFileProvider;
 import org.xwiki.store.attachments.util.internal.FilesystemStoreTools;
-import org.xwiki.store.legacy.doc.internal.FilesystemAttachmentContent;
 import org.xwiki.store.serialization.Serializer;
 import org.xwiki.store.serialization.SerializationStreamProvider;
 import org.xwiki.store.TransactionRunnable;
@@ -90,7 +90,7 @@ public class FilesystemDeletedAttachmentContentStore implements DeletedAttachmen
             ).runIn(out);
         }
 
-        // We don't save the deleted attachment metadata
+        // We don't save the deleted attachment metadata here
         // but the metadata for each attachment counts as content.
         this.fileTools.getSaver(
             new SerializationStreamProvider<List<XWikiAttachment>>(serializer, attachmentVersions),

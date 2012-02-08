@@ -21,11 +21,11 @@ package org.xwiki.store.attachments.adapter.internal;
 
 import javax.inject.Inject;
 import javax.inject.Named;
-import javax.inject.Provider;
 import javax.inject.Singleton;
 import org.xwiki.component.annotation.Component;
 import org.xwiki.store.attachments.newstore.internal.AttachmentArchiveStore;
 import org.xwiki.store.StartableTransactionRunnable;
+import org.xwiki.store.TransactionProvider;
 
 /**
  * Filesystem based AttachmentVersioningStore implementation.
@@ -45,7 +45,9 @@ public class FilesystemAttachmentVersioningStoreAdapter
     private AttachmentArchiveStore archiveStore;
 
     /** A means of getting a transaction to run the attachment save operation in. */
-    private Provider<StartableTransactionRunnable> provider;
+    @Inject
+    @Named("hibernate")
+    private TransactionProvider provider;
 
     /**
      * Testing Constructor.
@@ -55,7 +57,7 @@ public class FilesystemAttachmentVersioningStoreAdapter
      */
     public FilesystemAttachmentVersioningStoreAdapter(
         final AttachmentArchiveStore archiveStore,
-        final Provider<StartableTransactionRunnable> provider)
+        final TransactionProvider provider)
     {
         super(Object.class);
         this.archiveStore = archiveStore;

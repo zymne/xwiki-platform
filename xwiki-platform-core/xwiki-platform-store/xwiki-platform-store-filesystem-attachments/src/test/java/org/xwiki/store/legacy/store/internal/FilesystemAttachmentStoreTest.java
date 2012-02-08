@@ -31,7 +31,6 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.xwiki.store.legacy.doc.internal.FilesystemAttachmentContent;
 import com.xpn.xwiki.doc.XWikiAttachment;
 import com.xpn.xwiki.doc.XWikiAttachmentArchive;
 import com.xpn.xwiki.doc.XWikiAttachmentContent;
@@ -57,7 +56,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.xwiki.model.internal.reference.PathStringEntityReferenceSerializer;
+import org.xwiki.model.reference.AttachmentReference;
 import org.xwiki.model.reference.DocumentReference;
+import org.xwiki.store.attachments.legacy.doc.internal.FilesystemAttachmentContent;
 import org.xwiki.store.attachments.newstore.internal.AttachmentContentStore;
 import org.xwiki.store.attachments.newstore.internal.AttachmentStore;
 import org.xwiki.store.attachments.newstore.internal.FilesystemAttachmentContentStore;
@@ -69,6 +70,7 @@ import org.xwiki.store.StartableTransactionRunnable;
 import org.xwiki.store.TransactionRunnable;
 import org.xwiki.test.AbstractMockingComponentTestCase;
 import org.xwiki.store.attachments.adapter.internal.FilesystemHibernateAttachmentStoreAdapter;
+import org.xwiki.store.TransactionProvider;
 
 /**
  * Tests for FilesystemAttachmentStore.
@@ -106,6 +108,9 @@ public class FilesystemAttachmentStoreTest extends AbstractMockingComponentTestC
     private TestingTransactionRunnable<Session> testingAttachmentDeleteTr;
 
     private XWikiDocument doc;
+
+    private AttachmentReference attachRef =
+        new AttachmentReference("file.name", new DocumentReference("xwiki", "Main", "WebHome"));
 
     /**
      * The file which will hold content for this attachment.
@@ -189,7 +194,7 @@ public class FilesystemAttachmentStoreTest extends AbstractMockingComponentTestC
                 mockHibernateAttachmentStore,
                 new DummyHibernateTransactionProvider());
         this.storeFile =
-            this.fileTools.getAttachmentFileProvider(this.mockAttach).getAttachmentContentFile();
+            this.fileTools.getAttachmentFileProvider(attachRef).getAttachmentContentFile();
         HELLO_STREAM.reset();
     }
 
@@ -203,7 +208,7 @@ public class FilesystemAttachmentStoreTest extends AbstractMockingComponentTestC
     public void saveContentTest() throws Exception
     {
         final File storeFile =
-            this.fileTools.getAttachmentFileProvider(this.mockAttach).getAttachmentContentFile();
+            this.fileTools.getAttachmentFileProvider(this.attachRef).getAttachmentContentFile();
         Assert.assertFalse(this.storeFile.exists());
         this.attachStore.saveAttachmentContent(this.mockAttach, false, this.mockContext, false);
         Assert.assertTrue("The attachment file was not created.", this.storeFile.exists());

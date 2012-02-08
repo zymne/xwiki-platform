@@ -17,7 +17,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.xwiki.store.legacy.doc.internal;
+package org.xwiki.store.attachments.legacy.doc.internal;
 
 import java.util.Date;
 
@@ -30,13 +30,12 @@ import com.xpn.xwiki.doc.XWikiAttachmentContent;
 import org.xwiki.model.reference.DocumentReference;
 
 /**
- * Filesystem based Archive of deleted attachment,
- * stored in {@link com.xpn.xwiki.store.FilesystemAttachmentRecycleBinStore}.
+ * Deleted attachment with content stored externally.
  *
  * @version $Id$
- * @since 3.0M3
+ * @since TODO
  */
-public class DeletedFilesystemAttachment extends DeletedAttachment
+public class ExternalContentDeletedAttachment extends DeletedAttachment
 {
     /**
      * The reference to the document which this attachment belongs to.
@@ -49,75 +48,51 @@ public class DeletedFilesystemAttachment extends DeletedAttachment
     private XWikiAttachment attachment;
 
     /**
-     * Protected Constructor.
-     * Used by MutableDeletedFilesystemAttachment.
-     */
-    protected DeletedFilesystemAttachment()
-    {
-    }
-
-    /**
      * A constructor with all the information about the deleted attachment.
      *
      * @param attachment Deleted attachment.
      * @param deleter User which deleted the attachment.
      * @param deleteDate Date of delete action.
+     * @throws XWikiException won't happen unless DeletedAttachment constructor is modified.
      */
-    public DeletedFilesystemAttachment(final XWikiAttachment attachment,
-        final String deleter,
-        final Date deleteDate)
+    public ExternalContentDeletedAttachment(final XWikiAttachment attachment,
+                                            final String deleter,
+                                            final Date deleteDate) throws XWikiException
     {
-        this.setDocId(attachment.getDocId());
-        this.setDocName(attachment.getDoc().getFullName());
-        this.setFilename(attachment.getFilename());
-        this.setDeleter(deleter);
-        this.attachment = attachment;
-        this.setDate(deleteDate);
-        this.docReference = attachment.getDoc().getDocumentReference();
+        // This relies on the fact that DeletedAttachment constructor doesn't use the context
+        // for anything except to pass it to setAttachment which is overridden.
+        super(attachment, deleter, deleteDate, null);
     }
 
     /**
-     * {@inheritDoc}
+     * Clone a DeletedAttachment without the content.
      *
-     * @see com.xpn.xwiki.doc.DeletedAttachment#getDocId()
+     * @param original a DeletedAttachment to copy.
      */
-    @Override
-    public long getDocId()
+    public ExternalContentDeletedAttachment(final DeletedAttachment original)
     {
-        // TODO deprecate me.
-        if (this.attachment != null && this.attachment.getDoc() != null) {
-            return this.attachment.getDocId();
-        }
-        return 0;
+        this.setId(original.getId());
+        this.setDocId(original.getDocId());
+        this.setDocName(original.getDocName());
+        this.setFilename(original.getFilename());
+        this.setDate(original.getDate());
+        this.setDeleter(original.getDeleter());
+    }
+
+    @Override
+    public String getXml()
+    {
+        return "<!-- Attachment data is now stored externally. -->";
     }
 
     /**
      * {@inheritDoc}
      * context is unused and may safely be null.
-     *
-     * @see com.xpn.xwiki.doc.DeletedAttachment#setAttachment(XWikiAttachment, XWikiContext)
      */
     @Override
-    protected void setAttachment(final XWikiAttachment attachment, final XWikiContext context)
+    public void setAttachment(final XWikiAttachment attachment, final XWikiContext context)
     {
-        this.attachment = (XWikiAttachment) attachment.clone();
-        if (this.getDate() != null) {
-            this.setId(generateId(this.attachment, this.getDate()));
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @see com.xpn.xwiki.doc.DeletedAttachment#setDate(Date)
-     */
-    @Override
-    public void setDate(Date date)
-    {
-        super.setDate(date);
-        if (this.getAttachment() != null) {
-            this.setId(generateId(this.getAttachment(), date));
-        }
+        this.attachment = attachment;
     }
 
     /**
@@ -150,12 +125,9 @@ public class DeletedFilesystemAttachment extends DeletedAttachment
         this.docReference = docReference;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @see com.xpn.xwiki.doc.DeletedAttachment#restoreAttachment(XWikiAttachment, XWikiContext)
-     */
-    public XWikiAttachment restoreAttachment(final XWikiAttachment attachment, final XWikiContext context)
+    @Override
+    public XWikiAttachment restoreAttachment(final XWikiAttachment attachment,
+                                             final XWikiContext context)
         throws XWikiException
     {
         XWikiAttachment result = attachment;
@@ -179,20 +151,5 @@ public class DeletedFilesystemAttachment extends DeletedAttachment
 
         result.setDoc(context.getWiki().getDocument(this.getDocumentReference(), context));
         return result;
-    }
-
-    /**
-     * Generate an ID which will be as collision resistant as possible.
-     * Because {@link con.xpn.xwiki.doc.XWikiAttachment#getId()} returns an int cast to a long,
-     * this ID is guaranteed to be unique unless the same attachment is deleted twice in the same
-     * second or again in a second which will come around in another 136 years.
-     *
-     * @param attachment the attachment to get an ID number for.
-     * @param deleteDate the Date the attachment was deleted.
-     * @return an ID number for this deleted attachment.
-     */
-    private static long generateId(final XWikiAttachment attachment, final Date deleteDate)
-    {
-        return (attachment.getId() << 32) ^ ((deleteDate.getTime() / 1000) & 0x00000000FFFFFFFFL);
     }
 }

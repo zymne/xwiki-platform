@@ -28,6 +28,7 @@ import org.hibernate.Session;
 import org.xwiki.component.annotation.Component;
 import org.xwiki.context.Execution;
 import org.xwiki.store.RootTransactionRunnable;
+import org.xwiki.store.UnexpectedException;
 
 /**
  * A Transaction based on Hibernate store.
@@ -70,7 +71,7 @@ public class HibernateTransaction extends RootTransactionRunnable<Session>
     }
 
     @Override
-    protected Session getContext()
+    protected Session getProvidedContext()
     {
         return this.store.getSession(this.context);
     }
@@ -85,6 +86,9 @@ public class HibernateTransaction extends RootTransactionRunnable<Session>
     public void onRun() throws XWikiException
     {
         this.shouldCloseTransaction = this.store.beginTransaction(this.context);
+        if (this.getProvidedContext() == null) {
+            throw new UnexpectedException("The transaction did not begin properly.");
+        }
     }
 
     @Override

@@ -37,8 +37,8 @@ import org.xwiki.model.reference.EntityReferenceSerializer;
 import org.xwiki.model.reference.AttachmentReference;
 import org.xwiki.model.reference.DocumentReference;
 import org.xwiki.model.reference.EntityReference;
+import org.xwiki.store.attachments.legacy.doc.internal.ExternalContentDeletedAttachment;
 import org.xwiki.store.TransactionRunnable;
-import org.xwiki.store.UnexpectedException;
 
 /**
  * A means of storing deleted attachment metadata in Hibernate.
@@ -50,8 +50,11 @@ import org.xwiki.store.UnexpectedException;
 @Named("hibernate")
 public class HibernateDeletedAttachmentStore implements DeletedAttachmentStore<Session>
 {
+    /** a string which contains "date", multiple constants use it and checkstyle gets mad. */
+    private static final String DATE = "date";
+
     /** An order object which will sort by a field called "date" in decending order. */
-    private static final Order ORDER_DATE_DESCENDING = Order.desc("date");
+    private static final Order ORDER_DATE_DESCENDING = Order.desc(DATE);
 
     /**
      * The name of the field in DeletedAttachment for the document id
@@ -61,6 +64,9 @@ public class HibernateDeletedAttachmentStore implements DeletedAttachmentStore<S
 
     /** The name of the field in DeletedAttachment for the file name. */
     private static final String DELETED_ATTACH_FILENAME = "filename";
+
+    /** The exact time when the attachment was deleted. */
+    private static final String DELETED_ATTACH_DATE = DATE;
 
     /** This is a hack to get the database id from a DocumentReference, see: getDocId(). */
     private final XWikiDocument idTool = new XWikiDocument(null);
@@ -79,20 +85,22 @@ public class HibernateDeletedAttachmentStore implements DeletedAttachmentStore<S
         final Date dateOfDeletion)
     {
         final String deleterStr = this.deleterSerializer.serialize(deleter);
-        final HibernateDeletedAttachment trashAttach;
-        try {
-            trashAttach = new HibernateDeletedAttachment(attachment, deleterStr, dateOfDeletion);
-        } catch (Exception e) {
-            // Unless DeletedAttachment is changed, this will never happen.
-            throw new UnexpectedException(
-                "HibernateDeletedAttachment constructor threw an exception.", e);
-        }
+        final DeletedAttachment trashAttach = (new DeletedAttachment() {
+            {
+                setDocId(attachment.getDocId());
+                setDocName(attachment.getDoc().getFullName());
+                setFilename(attachment.getFilename());
+                setDeleter(deleterStr);
+                setDate(dateOfDeletion);
+                setXml("<!-- Content stored externally. -->");
+            }
+        });
 
         return (new TransactionRunnable<Session>() {
             @Override
             protected void onRun()
             {
-                this.getContext().save(trashAttach);
+                this.getContext().save(DeletedAttachment.class.getName(), trashAttach);
             }
         });
     }
@@ -100,7 +108,7 @@ public class HibernateDeletedAttachmentStore implements DeletedAttachmentStore<S
     @Override
     public TransactionRunnable<Session> getDeletedAttachmentLoadRunnable(
         final AttachmentReference reference,
-        final List<DeletedAttachment> output)
+        final List<ExternalContentDeletedAttachment> output)
     {
         final Long docId = (reference != null)
             ? Long.valueOf(this.getDocId(reference.getDocumentReference())) : Long.valueOf(0);
@@ -116,7 +124,12 @@ public class HibernateDeletedAttachmentStore implements DeletedAttachmentStore<S
                         c.add(Restrictions.eq(DELETED_ATTACH_FILENAME, fileName));
                     }
                 }
-                output.addAll((List<DeletedAttachment>) c.addOrder(ORDER_DATE_DESCENDING).list());
+                final List<DeletedAttachment> attachments =
+                    (List<DeletedAttachment>) c.addOrder(ORDER_DATE_DESCENDING).list();
+
+                for (final DeletedAttachment delAttach : attachments) {
+                    output.add(new ExternalContentDeletedAttachment(delAttach));
+                }
             }
         });
     }
@@ -124,7 +137,7 @@ public class HibernateDeletedAttachmentStore implements DeletedAttachmentStore<S
     @Override
     public TransactionRunnable<Session> getDeletedAttachmentLoadRunnable(
         final DocumentReference reference,
-        final List<DeletedAttachment> output)
+        final List<ExternalContentDeletedAttachment> output)
     {
         if (reference == null) {
             throw new NullPointerException("document reference was null");
@@ -136,7 +149,12 @@ public class HibernateDeletedAttachmentStore implements DeletedAttachmentStore<S
             {
                 final Criteria c = this.getContext().createCriteria(DeletedAttachment.class);
                 c.add(Restrictions.eq(DELETED_ATTACH_DOC_ID, docId));
-                output.addAll((List<DeletedAttachment>) c.addOrder(ORDER_DATE_DESCENDING).list());
+                final List<DeletedAttachment> attachments =
+                    (List<DeletedAttachment>) c.addOrder(ORDER_DATE_DESCENDING).list();
+
+                for (final DeletedAttachment delAttach : attachments) {
+                    output.add(new ExternalContentDeletedAttachment(delAttach));
+                }
             }
         });
     }
@@ -144,13 +162,18 @@ public class HibernateDeletedAttachmentStore implements DeletedAttachmentStore<S
     @Override
     public TransactionRunnable<Session> getDeletedAttachmentPurgeRunnable(
         final AttachmentReference reference,
-        final DeletedAttachment toPurge)
+        final Date dateOfDeletion)
     {
+        final Long docId = Long.valueOf(this.getDocId(reference.getDocumentReference()));
         return (new TransactionRunnable<Session>() {
             @Override
             protected void onRun()
             {
-                this.getContext().delete(toPurge);
+                final Criteria c = this.getContext().createCriteria(DeletedAttachment.class);
+                c.add(Restrictions.eq(DELETED_ATTACH_DOC_ID, docId));
+                c.add(Restrictions.eq(DELETED_ATTACH_FILENAME, reference.getName()));
+                c.add(Restrictions.eq(DELETED_ATTACH_DATE, dateOfDeletion));
+                this.getContext().delete(c.uniqueResult());
             }
         });
     }

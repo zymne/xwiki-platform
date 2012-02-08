@@ -19,6 +19,7 @@
  */
 package org.xwiki.store.attachments.adapter.internal;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.xpn.xwiki.doc.XWikiAttachment;
@@ -26,7 +27,9 @@ import com.xpn.xwiki.doc.XWikiAttachmentArchive;
 import com.xpn.xwiki.store.AttachmentVersioningStore;
 import com.xpn.xwiki.XWikiContext;
 import com.xpn.xwiki.XWikiException;
+import org.xwiki.model.reference.AttachmentReference;
 import org.xwiki.store.attachments.newstore.internal.AttachmentArchiveStore;
+import org.xwiki.store.attachments.legacy.doc.internal.ListAttachmentArchive;
 import org.xwiki.store.StartableTransactionRunnable;
 import org.xwiki.store.TransactionRunnable;
 
@@ -70,12 +73,14 @@ public abstract class AbstractAttachmentVersioningStoreAdapter<T>
                                               final boolean bTransaction)
         throws XWikiException
     {
+        final AttachmentReference ref = AttachmentTools.referenceForAttachment(attachment);
+        final List<XWikiAttachment> versionList = new ArrayList<XWikiAttachment>();
+
         try {
             final StartableTransactionRunnable<T> transaction = this.getTransaction();
             final TransactionRunnable<T> tr =
-                this.getArchiveStore().getAttachmentArchiveLoadRunnable(attachment);
+                this.getArchiveStore().getAttachmentArchiveLoadRunnable(ref, versionList);
             tr.runIn(transaction);
-            (System.out).println("\n\n\n\n\n\n\n\n\nTEST2\n\n\n\n\n\n\n\n\n");
             transaction.start();
         } catch (Exception e) {
             AttachmentTools.throwXWikiException("Exception while loading attachment archive",
@@ -83,6 +88,13 @@ public abstract class AbstractAttachmentVersioningStoreAdapter<T>
                                                 attachment);
         }
 
+        for (final XWikiAttachment attach : versionList) {
+            // Pass the document since it will be lost in the serialize/deserialize.
+            attach.setDoc(attachment.getDoc());
+        }
+
+        attachment.setAttachment_archive(new ListAttachmentArchive(versionList));
+        attachment.getAttachment_archive().setAttachment(attachment);
         return attachment.getAttachment_archive();
     }
 
@@ -132,10 +144,11 @@ public abstract class AbstractAttachmentVersioningStoreAdapter<T>
         if (attachment == null) {
             throw new NullPointerException("The attachment to delete cannot be null");
         }
+        final AttachmentReference ref = AttachmentTools.referenceForAttachment(attachment);
         try {
             final StartableTransactionRunnable<T> transaction = this.getTransaction();
             final TransactionRunnable<T> tr =
-                this.getArchiveStore().getAttachmentArchiveDeleteRunnable(attachment);
+                this.getArchiveStore().getAttachmentArchiveDeleteRunnable(ref);
             tr.runIn(transaction);
             transaction.start();
         } catch (Exception e) {

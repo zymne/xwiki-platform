@@ -22,12 +22,12 @@ package org.xwiki.store.attachments.newstore.internal;
 import java.util.Date;
 import java.util.List;
 
-import com.xpn.xwiki.doc.DeletedAttachment;
 import com.xpn.xwiki.doc.XWikiAttachment;
 import org.xwiki.component.annotation.ComponentRole;
 import org.xwiki.model.reference.AttachmentReference;
 import org.xwiki.model.reference.DocumentReference;
 import org.xwiki.model.reference.EntityReference;
+import org.xwiki.store.attachments.legacy.doc.internal.ExternalContentDeletedAttachment;
 import org.xwiki.store.TransactionRunnable;
 
 /**
@@ -65,8 +65,9 @@ public interface DeletedAttachmentStore<T>
      * @param output an empty list to be populated with the deleted versions of this attachment.
      * @return a TransactionRunnable which will load the deleted attachments and populate the list.
      */
-    TransactionRunnable<T> getDeletedAttachmentLoadRunnable(final AttachmentReference reference,
-                                                            final List<DeletedAttachment> output);
+    TransactionRunnable<T> getDeletedAttachmentLoadRunnable(
+        final AttachmentReference reference,
+        final List<ExternalContentDeletedAttachment> output);
 
     /**
      * Load the metadata of all deleted attachments for a list of documents.
@@ -77,17 +78,18 @@ public interface DeletedAttachmentStore<T>
      * @param output an empty list to be populated with the deleted attachments for this document.
      * @return a TransactionRunnable which will load the deleted attachments and populate the list.
      */
-    TransactionRunnable<T> getDeletedAttachmentLoadRunnable(final DocumentReference reference,
-                                                            final List<DeletedAttachment> output);
+    TransactionRunnable<T> getDeletedAttachmentLoadRunnable(
+        final DocumentReference reference,
+        final List<ExternalContentDeletedAttachment> output);
 
     /**
      * Get a runnable to purge the deleted attachment from the deleted attachment store.
      * Only the deleted attachment metadata such as who deleted it and when will be purged.
      *
      * @param reference a reference to the attachment which was deleted.
-     * @param attach the deleted attachment to purge from storage.
+     * @param dateOfDeletion when the attachment was deleted.
      * @return a TransactionRunnable which will remove the content from the store.
      */
     TransactionRunnable<T> getDeletedAttachmentPurgeRunnable(final AttachmentReference reference,
-                                                             final DeletedAttachment attach);
+                                                             final Date dateOfDeletion);
 }

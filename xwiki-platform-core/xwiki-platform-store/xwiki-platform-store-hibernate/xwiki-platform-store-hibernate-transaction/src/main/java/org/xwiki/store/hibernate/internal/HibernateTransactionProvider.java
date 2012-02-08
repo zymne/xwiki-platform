@@ -46,7 +46,7 @@ public class HibernateTransactionProvider implements TransactionProvider<Session
     public StartableTransactionRunnable<Session> get()
     {
         final XWikiContext context =
-            (XWikiContext) this.exec.getContext().getProperty("xwiki-context");
+            (XWikiContext) this.exec.getContext().getProperty("xwikicontext");
         return new HibernateTransaction(context);
     }
 }

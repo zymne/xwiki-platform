@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.concurrent.locks.ReadWriteLock;
 
 import com.xpn.xwiki.XWikiContext;
-import com.xpn.xwiki.doc.XWikiAttachment;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
@@ -259,10 +258,9 @@ public class DefaultFilesystemStoreTools implements FilesystemStoreTools, Initia
     }
 
     @Override
-    public AttachmentFileProvider getAttachmentFileProvider(final XWikiAttachment attachment)
+    public AttachmentFileProvider getAttachmentFileProvider(final AttachmentReference ref)
     {
-        return new DefaultAttachmentFileProvider(this.getAttachmentDir(attachment),
-            attachment.getFilename());
+        return new DefaultAttachmentFileProvider(this.getAttachmentDir(ref), ref.getName());
     }
 
     @Override
@@ -324,20 +322,16 @@ public class DefaultFilesystemStoreTools implements FilesystemStoreTools, Initia
      * Get the directory for storing files for an attachment.
      * This will look like storage/xwiki/Main/WebHome/~this/attachments/file.name/
      *
-     * @param attachment the attachment to get the directory for.
+     * @param ref a reference to the attachment to get a file for.
      * @return a File representing the directory. Note: The directory may not exist.
      */
-    private File getAttachmentDir(final XWikiAttachment attachment)
+    private File getAttachmentDir(final AttachmentReference ref)
     {
-        if (attachment.getDoc() == null) {
-            throw new NullPointerException("Could not store attachment because it is not "
-                + "associated with a document.");
-        }
-        final File docDir = getDocumentDir(attachment.getDoc().getDocumentReference(),
+        final File docDir = getDocumentDir(ref.getDocumentReference(),
                                            this.storageDir,
                                            this.pathSerializer);
         final File attachmentsDir = new File(docDir, ATTACHMENT_DIR_NAME);
-        return new File(attachmentsDir, GenericFileUtils.getURLEncoded(attachment.getFilename()));
+        return new File(attachmentsDir, GenericFileUtils.getURLEncoded(ref.getName()));
     }
 
     /**

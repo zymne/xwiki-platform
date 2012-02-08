@@ -1,1 +1,1 @@
-org.xwiki.store.internal.HibernateTransaction
+org.xwiki.store.hibernate.internal.HibernateTransactionProvider

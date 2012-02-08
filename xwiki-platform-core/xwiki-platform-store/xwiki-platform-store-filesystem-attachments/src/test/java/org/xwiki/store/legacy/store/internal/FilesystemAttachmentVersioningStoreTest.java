@@ -38,18 +38,20 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.xwiki.model.internal.reference.PathStringEntityReferenceSerializer;
+import org.xwiki.model.reference.AttachmentReference;
 import org.xwiki.model.reference.DocumentReference;
 import org.xwiki.store.attachments.adapter.internal.FilesystemAttachmentVersioningStoreAdapter;
+import org.xwiki.store.attachments.legacy.doc.internal.ListAttachmentArchive;
 import org.xwiki.store.attachments.newstore.internal.FilesystemAttachmentArchiveStore;
 import org.xwiki.store.attachments.util.internal.AttachmentFileProvider;
 import org.xwiki.store.attachments.util.internal.DefaultFilesystemStoreTools;
 import org.xwiki.store.attachments.util.internal.FilesystemStoreTools;
-import org.xwiki.store.legacy.doc.internal.ListAttachmentArchive;
 import org.xwiki.store.locks.preemptive.internal.PreemptiveLockProvider;
 import org.xwiki.store.serialization.xml.internal.AttachmentListMetadataSerializer;
 import org.xwiki.store.serialization.xml.internal.AttachmentMetadataSerializer;
 import org.xwiki.store.StartableTransactionRunnable;
 import org.xwiki.test.AbstractMockingComponentTestCase;
+import org.xwiki.store.TransactionProvider;
 
 /**
  * Tests for FilesystemAttachmentVersioningStore.
@@ -86,7 +88,7 @@ public class FilesystemAttachmentVersioningStoreTest extends AbstractMockingComp
             new AttachmentListMetadataSerializer(new AttachmentMetadataSerializer());
         final FilesystemAttachmentArchiveStore archiveStore =
             new FilesystemAttachmentArchiveStore(this.fileTools, serializer);
-        final Provider<StartableTransactionRunnable> provider = new DummyTransactionProvider();
+        final TransactionProvider provider = new DummyTransactionProvider();
         this.versionStore = new FilesystemAttachmentVersioningStoreAdapter(archiveStore, provider);
 
         final XWikiDocument doc = new XWikiDocument(new DocumentReference("xwiki", "Main", "WebHome"));
@@ -109,7 +111,8 @@ public class FilesystemAttachmentVersioningStoreTest extends AbstractMockingComp
         version3.setDoc(doc);
         version3.setAttachment_content(new StringAttachmentContent("I am version 1.3"));
 
-        this.provider = this.fileTools.getAttachmentFileProvider(version1);
+        this.provider = this.fileTools.getAttachmentFileProvider(
+            new AttachmentReference("attachment.txt", doc.getDocumentReference()));
         this.archive = new ListAttachmentArchive(new ArrayList<XWikiAttachment>() {{
             add(version1);
             add(version2);

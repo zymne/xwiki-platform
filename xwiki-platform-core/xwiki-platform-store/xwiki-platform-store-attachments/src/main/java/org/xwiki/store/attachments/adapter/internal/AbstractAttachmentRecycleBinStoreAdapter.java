@@ -21,7 +21,9 @@ package org.xwiki.store.attachments.adapter.internal;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.xpn.xwiki.doc.DeletedAttachment;
 import com.xpn.xwiki.doc.XWikiAttachment;
@@ -37,6 +39,8 @@ import org.xwiki.model.reference.DocumentReference;
 import org.xwiki.model.reference.EntityReference;
 import org.xwiki.model.reference.EntityReferenceResolver;
 import org.xwiki.model.EntityType;
+import org.xwiki.store.attachments.legacy.doc.internal.ExternalContentDeletedAttachment;
+import org.xwiki.store.attachments.legacy.doc.internal.ListAttachmentArchive;
 import org.xwiki.store.attachments.newstore.internal.DeletedAttachmentContentStore;
 import org.xwiki.store.attachments.newstore.internal.DeletedAttachmentStore;
 import org.xwiki.store.StartableTransactionRunnable;
@@ -138,10 +142,15 @@ public abstract class AbstractAttachmentRecycleBinStoreAdapter<T>
                                                   final boolean bTransaction) throws XWikiException
     {
         final AttachmentReference attachRef = this.getAttachmentReferenceForId(index);
-        final DeletedAttachment out = this.getDeletedAttachment(attachRef, index);
+        final ExternalContentDeletedAttachment out = this.getDeletedAttachment(attachRef, index);
         if (out != null) {
-            this.loadAttachmentContent(attachRef.getDocumentReference(),
-                                       new ArrayList<DeletedAttachment>(1) { { add(out); } });
+            this.loadAttachmentContent(
+                attachRef.getDocumentReference(),
+                new ArrayList<ExternalContentDeletedAttachment>(1) {
+                    {
+                        add(out);
+                    }
+                });
         }
 
         return out;
@@ -164,11 +173,9 @@ public abstract class AbstractAttachmentRecycleBinStoreAdapter<T>
             return this.getAllDeletedAttachments(attachment.getDoc(), context, false);
         }
 
-        final AttachmentReference attachRef =
-            new AttachmentReference(attachment.getFilename(),
-                                    attachment.getDoc().getDocumentReference());
-
-        final List<DeletedAttachment> out = new ArrayList<DeletedAttachment>();
+        final AttachmentReference attachRef = AttachmentTools.referenceForAttachment(attachment);
+        final List<ExternalContentDeletedAttachment> out =
+            new ArrayList<ExternalContentDeletedAttachment>();
         final StartableTransactionRunnable<T> transaction = this.getTransaction();
         this.getMetaStore().getDeletedAttachmentLoadRunnable(attachRef, out).runIn(transaction);
         try {
@@ -185,7 +192,7 @@ public abstract class AbstractAttachmentRecycleBinStoreAdapter<T>
             this.loadAttachmentContent(attachRef.getDocumentReference(), out);
         }
 
-        return out;
+        return new ArrayList<DeletedAttachment>(out.size()) { { addAll(out); } };
     }
 
     @Override
@@ -194,7 +201,8 @@ public abstract class AbstractAttachmentRecycleBinStoreAdapter<T>
                                                             final boolean bTransaction)
         throws XWikiException
     {
-        final List<DeletedAttachment> out = new ArrayList<DeletedAttachment>();
+        final List<ExternalContentDeletedAttachment> out =
+            new ArrayList<ExternalContentDeletedAttachment>();
         final StartableTransactionRunnable<T> transaction = this.getTransaction();
         this.getMetaStore()
             .getDeletedAttachmentLoadRunnable(doc.getDocumentReference(), out)
@@ -213,7 +221,7 @@ public abstract class AbstractAttachmentRecycleBinStoreAdapter<T>
             this.loadAttachmentContent(doc.getDocumentReference(), out);
         }
 
-        return out;
+        return new ArrayList<DeletedAttachment>(out.size()) { { addAll(out); } };
     }
 
     @Override
@@ -229,7 +237,7 @@ public abstract class AbstractAttachmentRecycleBinStoreAdapter<T>
         } else {
             final StartableTransactionRunnable<T> transaction = this.getTransaction();
             this.getMetaStore()
-                .getDeletedAttachmentPurgeRunnable(ar, toPurge)
+                .getDeletedAttachmentPurgeRunnable(ar, toPurge.getDate())
                     .runIn(transaction);
             this.getContentStore()
                 .getDeletedAttachmentContentPurgeRunnable(ar, toPurge.getDate())
@@ -254,13 +262,17 @@ public abstract class AbstractAttachmentRecycleBinStoreAdapter<T>
      * @throws XWikiException if there is an unexpected exception while running the transaction.
      */
     private void loadAttachmentContent(final DocumentReference docRef,
-                                       final List<DeletedAttachment> toLoad)
+                                       final List<ExternalContentDeletedAttachment> toLoad)
         throws XWikiException
     {
         final StartableTransactionRunnable<T> transaction = this.getTransaction();
-        for (final DeletedAttachment attach : toLoad) {
+        final Map<ExternalContentDeletedAttachment, List<XWikiAttachment>> map =
+            new HashMap<ExternalContentDeletedAttachment, List<XWikiAttachment>>();
+
+        for (final ExternalContentDeletedAttachment attach : toLoad) {
             final AttachmentReference ref = new AttachmentReference(attach.getFilename(), docRef);
             final List<XWikiAttachment> versions = new ArrayList<XWikiAttachment>();
+            map.put(attach, versions);
             this.getContentStore()
                 .getDeletedAttachmentContentLoadRunnable(ref, attach.getDate(), versions)
                     .runIn(transaction);
@@ -275,6 +287,10 @@ public abstract class AbstractAttachmentRecycleBinStoreAdapter<T>
                                      + "for all attachments in document: "
                                      + docRef, e);
         }
+
+        for (final ExternalContentDeletedAttachment att : map.keySet()) {
+            att.setAttachment(new ListAttachmentArchive(map.get(att)).getAttachment(), null);
+        }
     }
 
     /**
@@ -285,10 +301,12 @@ public abstract class AbstractAttachmentRecycleBinStoreAdapter<T>
      * @return the deleted attachment WITHOUT CONTENT or null if it is not found.
      * @throws XWikiException if there is an unexpected exception while running the transaction.
      */
-    private DeletedAttachment getDeletedAttachment(final AttachmentReference attachRef,
-                                                   final long index) throws XWikiException
+    private ExternalContentDeletedAttachment getDeletedAttachment(
+        final AttachmentReference attachRef,
+        final long index) throws XWikiException
     {
-        final List<DeletedAttachment> list = new ArrayList<DeletedAttachment>();
+        final List<ExternalContentDeletedAttachment> list =
+            new ArrayList<ExternalContentDeletedAttachment>();
         final StartableTransactionRunnable<T> transaction = this.getTransaction();
         this.getMetaStore().getDeletedAttachmentLoadRunnable(attachRef, list).runIn(transaction);
         try {
@@ -300,12 +318,12 @@ public abstract class AbstractAttachmentRecycleBinStoreAdapter<T>
                                      + attachRef,
                                      e);
         }
-        DeletedAttachment out = null;
-        for (final DeletedAttachment attach : list) {
+
+        for (final ExternalContentDeletedAttachment attach : list) {
             if (attach.getId() == index) {
-                out = attach;
+                return attach;
             }
         }
-        return out;
+        return null;
     }
 }
