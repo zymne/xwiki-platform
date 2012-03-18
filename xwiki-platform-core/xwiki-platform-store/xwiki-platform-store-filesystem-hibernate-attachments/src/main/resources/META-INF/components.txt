@@ -1,0 +1,2 @@
+org.xwiki.store.attachments.adapter.internal.FilesystemHibernateAttachmentStoreAdapter
+org.xwiki.store.attachments.adapter.internal.FilesystemHibernateAttachmentRecycleBinStoreAdapter

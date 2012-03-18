@@ -3,8 +3,6 @@ org.xwiki.store.attachments.newstore.internal.FilesystemAttachmentArchiveStore
 org.xwiki.store.attachments.newstore.internal.FilesystemAttachmentContentStore
 org.xwiki.store.attachments.newstore.internal.FilesystemDeletedAttachmentContentStore
 org.xwiki.store.attachments.adapter.internal.FilesystemAttachmentVersioningStoreAdapter
-org.xwiki.store.attachments.adapter.internal.FilesystemHibernateAttachmentRecycleBinStoreAdapter
-org.xwiki.store.attachments.adapter.internal.FilesystemHibernateAttachmentStoreAdapter
 org.xwiki.store.attachments.util.internal.DefaultFilesystemStoreTools
 org.xwiki.store.serialization.xml.internal.DeletedAttachmentMetadataSerializer
 org.xwiki.store.serialization.xml.internal.DeletedAttachmentIdMappingSerializer

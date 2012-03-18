@@ -44,6 +44,7 @@
     <module>xwiki-platform-store-attachments</module>
     <module>xwiki-platform-store-hibernate</module>
     <module>xwiki-platform-store-filesystem-attachments</module>
+    <module>xwiki-platform-store-filesystem-hibernate-attachments</module>
   </modules>
   <build>
     <plugins>

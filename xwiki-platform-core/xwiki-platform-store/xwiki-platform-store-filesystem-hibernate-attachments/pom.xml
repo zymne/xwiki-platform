@@ -22,16 +22,18 @@
  *
 -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.xwiki.platform</groupId>
     <artifactId>xwiki-platform-store</artifactId>
     <version>3.4-SNAPSHOT</version>
   </parent>
-  <artifactId>xwiki-platform-store-filesystem-attachments</artifactId>
-  <name>XWiki Platform - Store - Filesystem - Attachments</name>
-  <description>A means to store XWikiAttachments on the filesystem with versioning.</description>
+  <artifactId>xwiki-platform-store-filesystem-hibernate-attachments</artifactId>
+  <name>XWiki Platform - Store - Filesystem - Hibernate - Attachments</name>
+  <description>Stores attachment content on the filesystem and metadata in Hibernate.</description>
   <dependencies>
     <dependency>
       <groupId>org.xwiki.commons</groupId>
@@ -41,28 +43,13 @@
 
     <dependency>
       <groupId>org.xwiki.platform</groupId>
-      <artifactId>xwiki-platform-store-attachments</artifactId>
+      <artifactId>xwiki-platform-store-filesystem-attachments</artifactId>
       <version>${project.version}</version>
     </dependency>
 
-    <!-- Needed for DocumentReferenceSerializer implementation. -->
     <dependency>
       <groupId>org.xwiki.platform</groupId>
-      <artifactId>xwiki-platform-model</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-
-    <!-- Used to serialize the metadata for attachments -->
-    <dependency>
-      <groupId>org.xwiki.platform</groupId>
-      <artifactId>xwiki-platform-store-serialization</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-
-    <!-- StreamProvider -->
-    <dependency>
-      <groupId>org.xwiki.platform</groupId>
-      <artifactId>xwiki-platform-store-api</artifactId>
+      <artifactId>xwiki-platform-store-hibernate-attachments</artifactId>
       <version>${project.version}</version>
     </dependency>
 
@@ -70,13 +57,6 @@
     <dependency>
       <groupId>org.xwiki.platform</groupId>
       <artifactId>xwiki-platform-store-transaction</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-
-    <!-- FileSaveTransactionRunnable, FileDeleteTransactionRunnable -->
-    <dependency>
-      <groupId>org.xwiki.platform</groupId>
-      <artifactId>xwiki-platform-store-filesystem</artifactId>
       <version>${project.version}</version>
     </dependency>
 
@@ -90,20 +70,6 @@
       <groupId>org.xwiki.platform</groupId>
       <artifactId>xwiki-platform-oldcore</artifactId>
       <version>${project.version}</version>
-      <exclusions>
-        <!-- lets make sure nothing in here depends on hibernate. -->
-        <exclusion>
-          <groupId>org.hibernate</groupId>
-          <artifactId>hibernate-core</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-
-    <!-- LockProvider for locking attachments -->
-    <dependency>
-      <groupId>org.xwiki.platform</groupId>
-      <artifactId>xwiki-platform-store-locks</artifactId>
-      <version>${project.version}</version>
     </dependency>
 
 
@@ -116,15 +82,10 @@
       <scope>test</scope>
     </dependency>
 
-    <!--
-      * The old core really wants to start this
-      * but we want to make sure this module doesn't depend on it
-      * So we'll pull it in as a testing dependency.
-      -->
+    <!-- Needed for ClassImposteriser for mocking XWikiContext etc. -->
     <dependency>
-      <groupId>org.hibernate</groupId>
-      <artifactId>hibernate-core</artifactId>
-      <version>3.6.8.Final</version>
+      <groupId>org.jmock</groupId>
+      <artifactId>jmock-legacy</artifactId>
       <scope>test</scope>
     </dependency>
 
