@@ -14,7 +14,7 @@
 #if($request.xredirect)
   #set($redirect = $request.xredirect)
 #else
-  #set($redirect = $xwiki.getRequestURL())
+  #set($redirect = $xwiki.relativeRequestURL)
 #end
 #if(!$redirect)
   #set($redirect = $importDoc.getURL('import', 'section=Import'))
@@ -62,7 +62,7 @@
       #if($attachments.size() > 0)
       <ul class="xlist">
         #foreach ($attach in $attachments)
-          #set($url = $doc.getURL('import', "${baseQueryString}&amp;file=${attach.filename}"))
+          #set($url = $doc.getURL('import', "${baseQueryString}&amp;file=${escapetool.url($attach.filename).replace('+', '%20')}"))
           #if("$!request.file" == "$!attach.filename") #set($extra = 'active') #else #set($extra = '') #end
           <li class="xitem xhighlight">
             <div class="xitemcontainer package $!extra">

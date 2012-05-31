@@ -1,33 +1,36 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
 <xwikidoc>
-<web>XWiki</web>
-<name>AddExtensions</name>
-<language></language>
-<defaultLanguage>en</defaultLanguage>
-<translation>0</translation>
-<parent>XWiki.AdminSheet</parent>
-<creator>xwiki:XWiki.Admin</creator>
-<author>xwiki:XWiki.Admin</author>
-<customClass></customClass>
-<contentAuthor>xwiki:XWiki.Admin</contentAuthor>
-<creationDate>1321658413000</creationDate>
-<date>1322840333000</date>
-<contentUpdateDate>1322840333000</contentUpdateDate>
-<version>1.1</version>
-<title>$msg.get("admin.xwiki.addextensions")</title>
-<template></template>
-<defaultTemplate></defaultTemplate>
-<validationScript></validationScript>
-<comment></comment>
-<minorEdit>false</minorEdit>
-<syntaxId>xwiki/2.1</syntaxId>
-<hidden>false</hidden><attachment>
-<filename>icon.png</filename>
-<filesize>8529</filesize>
-<author>xwiki:XWiki.Admin</author>
-<date>1326131999000</date>
-<version>1.1</version>
-<comment></comment><content>iVBORw0KGgoAAAANSUhEUgAAAH0AAABVCAYAAABkf+t+AAAhGElEQVR4XuydCZBkxZnf/5nvrPvo
+  <web>XWiki</web>
+  <name>AddExtensions</name>
+  <language/>
+  <defaultLanguage/>
+  <translation>0</translation>
+  <parent>XWiki.AdminSheet</parent>
+  <creator>xwiki:XWiki.Admin</creator>
+  <author>xwiki:XWiki.Admin</author>
+  <customClass/>
+  <contentAuthor>xwiki:XWiki.Admin</contentAuthor>
+  <creationDate>1321658413000</creationDate>
+  <date>1331567255000</date>
+  <contentUpdateDate>1331567255000</contentUpdateDate>
+  <version>1.1</version>
+  <title>$msg.get("admin.xwiki.addextensions")</title>
+  <template/>
+  <defaultTemplate/>
+  <validationScript/>
+  <comment/>
+  <minorEdit>false</minorEdit>
+  <syntaxId>xwiki/2.1</syntaxId>
+  <hidden>true</hidden>
+  <attachment>
+    <filename>icon.png</filename>
+    <filesize>8529</filesize>
+    <author>xwiki:XWiki.Admin</author>
+    <date>1326131999000</date>
+    <version>1.1</version>
+    <comment/>
+    <content>iVBORw0KGgoAAAANSUhEUgAAAH0AAABVCAYAAABkf+t+AAAhGElEQVR4XuydCZBkxZnf/5nvrPvo
 8xjm3plhgBnEaDkPQawAicUSti5bsmB9KGxLWjk2jDdWWmuNVl7tyrZW8sbKYVAoMELBrsUSOkAG
 IQkLwQCSVsAAwxwwZzNHz/RR3XW/I9PZWRkZnVTXVE9PMz2y5yM+8r18r+rV9K++I/N7Wc/G/3dy
 XpYJ+nm57777fEppihCSiuM4adt2UWiBc15wXStHqdUfhs2nP/KRj/3kNwD6eZizEH2fJ8PQTlvW
@@ -177,182 +180,78 @@ YoxVADQUeGn1i7L0RiN49Nlnt09Tap/YuXPnxGOPPTbTaDRmRkdHG2EYsiAISLVaJQAcpRQA+b/t
 l80KgCAQhC2WqFf0bX2q/rU9zCECEQxTaD4Y5rZ7+Ngw8yXE47pnSId447Mu3VrrtFzkST1qJvSg
 kWrCyQnxm2ZJfeIlY0GPBCzxmrX6lfPaT2RHZ1x6nICBGK7dgnDibwklpKMxXKkqnYRnJ/7T3y1p
 TTblp5ECixqHCAX8AEonFxlHq+tGuw3SAAAAAElFTkSuQmCC
-</content></attachment>
-<content>{{include document="ExtensionManagerMacros" /}}
+</content>
+  </attachment>
+  <content>{{include document="ExtensionManagerMacros" /}}
 
 {{velocity}}
-## Ajax call for a single extension
-#if ($request.extensionid &amp;&amp; $request.extensionversion &amp;&amp; $request.ajax)
-  #set ($actions = [])
-  #if ($request.actionshowdetails)
-    #set ($discard = $actions.add("&lt;span class=""buttonwrapper""&gt;&lt;input type=""submit"" name=""showdetails"" value=""$msg.get('extensions.actions.showDetails')"" class=""button visibilityAction"" /&gt;&lt;/span&gt;"))
-    #set ($discard = $actions.add("&lt;span class=""buttonwrapper""&gt;&lt;input type=""submit"" name=""hidedetails"" value=""$msg.get('extensions.actions.hideDetails')"" class=""button visibilityAction"" /&gt;&lt;/span&gt;"))
-  #end
-  #if ($hasProgramming)
-    #set ($discard = $actions.add("&lt;span class=""buttonwrapper""&gt;&lt;input type=""submit"" name=""actioninstall"" value=""$msg.get('extensions.actions.install')"" class=""button"" /&gt;&lt;/span&gt;"))
-  #end
-  #displayExtension($extensionManager.resolve($request.extensionid, $request.extensionversion) $actions)
+## AJAX call for a single extension.
+#if ($xcontext.action == 'get' &amp;&amp; $request.extensionId &amp;&amp; $request.extensionVersion)
+  #handleExtensionRequest()
 #else
-##
-(% class="full column" %)(((
-#if($request.actioninstall)
+  (% class="full column" %)(((
   #displayExtensionSearchBar()
-  = $msg.get('extensions.install.title')
-
-  #if (!$request.extensionid || !$request.extensionversion)
-    {{error}}$msg.get('extensions.install.error.missingIdOrVersion'){{/error}}
-  #elseif ($request.confirm)
-    #set($installJob = $extensionManager.install($request.extensionid, $request.extensionversion, $extensionwiki))
-    #set($lasterror = $extensionManager.lastError)
-    #if ($lasterror)
-      #if($extensionwiki)
-        {{error}}$msg.get('extensions.install.error.installFailure.onWiki', [$request.extensionid, $request.extensionversion, $extensionwiki]) ##
-      #else
-        {{error}}$msg.get('extensions.install.error.installFailure', [$request.extensionid, $request.extensionversion]) ##
-      #end
-      #printThrowable($lasterror){{/error}}
-    #else
-      {{box}}#printJobLog($installJob){{/box}}
-    #end
+  #if ($request.extensionId &amp;&amp; $request.extensionVersion)
+    ## Advanced search.
+    #handleExtensionRequest()
   #else
-    #set($extensionsToInstall = {})
-    #set($extensionsToUpgrade = {})
-    #set($extensionsSuggested = {})
-    #set($coreExtensionsConflicts = {})
-    #prepareInstall($request.extensionid $extensionManager.parseVersion($request.extensionversion) $extensionsToInstall $extensionsToUpgrade $extensionsSuggested, $coreExtensionsConflicts)
-    #set($lasterror = $extensionManager.lastError)
-    #if ($lasterror)
-      {{error}}$msg.get('extensions.install.error.prepareFailure', [$request.extensionid, $request.extensionversion, $lasterror.message]){{/error}}
-    #elseif ($extensionsToInstall.isEmpty() &amp;&amp; $extensionsToUpgrade.isEmpty())
-      {{info}}$msg.get('extensions.install.error.alreadyInstalled'){{/info}}
-    #else
-      #if (!$extensionsToInstall.isEmpty())
-        $msg.get('extensions.install.list.new')
-        #foreach ($extension in $extensionsToInstall.values())
-          * $extension.id.id ($extension.id.version)
-        #end
-
-      #end
-      #if (!$extensionsToUpgrade.isEmpty())
-        $msg.get('extensions.install.list.upgrade')
-        #foreach ($extension in $extensionsToUpgrade.values())
-          * $extension.id.id ($extension.id.version)
-        #end
-
-      #end
-      #if (!$extensionsSuggested.isEmpty())
-        $msg.get('extensions.install.list.suggested')
-        #foreach ($extension in $extensionsSuggested.values())
-          * $extension.id.id ($extension.id.version)
-        #end
-
-      #end
-      #if (!$coreExtensionsConflicts.isEmpty())
-        {{error}}
-          $msg.get('extensions.install.list.conflict')
-          #foreach ($conflict in $coreExtensionsConflicts.values())
-            * $msg.get('extensions.install.error.conflictingExtension', ["**${conflict.get(0).id.id}**", "**${conflict.get(1)}**", "**${conflict.get(0).id.version}**"])
+    ## Simple search.
+    #set ($noResultsMessageKey = 'extensions.search.noResults')
+    #set ($paginationParams = {})
+    ## Dump whitespace generated by the pagination macro
+    #set ($discard = "#paginationPrepareParams($paginationParams)")
+    #set ($repository = $extensionManager)
+    #if ($request.repo)
+      #set ($selectedRepositoryId = $request.repo)
+    #end
+    #if ("$!selectedRepositoryId" != '')
+      #set ($repository = $extensionManager.getRepository($selectedRepositoryId))
+      #if ("$!request.search" == '')
+        ## Fetch extensions from known repositories.
+        #if ($selectedRepositoryId == 'core')
+          #set($extensions = $extensionManager.getCoreExtensions())
+        #elseif ($selectedRepositoryId == 'installed')
+          #if ($xcontext.isMainWiki())
+            #set($extensions = $extensionManager.getInstalledExtensions())
+          #else
+            #set($extensions = $extensionManager.getInstalledExtensions($extensionNamespace))
           #end
-        {{/error}}
-
+        #elseif ($selectedRepositoryId == 'local')
+          #set($extensions = $extensionManager.getLocalExtensions())
+        #end
+        #if ($extensions)
+          #set ($totalHits = $extensions.size())
+          #if ($totalHits == 0)
+            #set ($noResultsMessageKey = "extensions.search.repository.${selectedRepositoryId}.empty")
+          #end
+          ## All extensions from the specified repository have been fetched. We need to display only the current page.
+          #set ($extensions = $extensions.subList($paginationParams.firstItem, $mathtool.min($extensions.size(), $mathtool.add($paginationParams.firstItem, $paginationParams.itemsPerPage))))
+        #end
       #end
-      #if ($coreExtensionsConflicts.isEmpty())
-        {{html}}
-        &lt;form action="$xwiki.requestURL" enctype="multipart/form-data" method="post" class="xform"&gt;
-          &lt;div&gt;
-            &lt;input name="extensionid" value="${escapetool.xml($request.extensionid)}" type="hidden" /&gt;
-            &lt;input name="extensionversion" value="${escapetool.xml($request.extensionversion)}" type="hidden" /&gt;
-            #if ($extensionwiki)
-              &lt;input name="extensionwiki" value="$extensionwiki" type="hidden" /&gt;
-            #end
-            &lt;input name="actioninstall" type="hidden" /&gt;
-            &lt;p&gt;
-              &lt;span class="buttonwrapper"&gt;&lt;input type="submit" value="$msg.get('extensions.install.actions.submit')" name="confirm" class="button"/&gt;&lt;/span&gt;
-              #if ("$!{request.xback}" != '')
-                &lt;span class="buttonwrapper"&gt;&lt;a href="${request.xback}" class="secondary button"&gt;$msg.get('extensions.install.actions.cancel')&lt;/a&gt;&lt;/span&gt;
-              #end
-            &lt;/p&gt;
-          &lt;/div&gt;
-        &lt;/form&gt;
-        {{/html}}
+    #end
+    #if (!$extensions)
+      #set ($extensions = $repository.search("$!request.search", $paginationParams.firstItem, $paginationParams.itemsPerPage))
+      #set ($totalHits = $extensions.totalHits)
+    #end
+    #if (!$extensions.iterator().hasNext())
+      {{info}}$msg.get($noResultsMessageKey, ["//$!{request.search}//"]){{/info}}
+    #else
+      #if ($totalHits &amp;&amp; $totalHits &gt; $paginationParams.itemsPerPage)
+        #set ($hasPagination = true)
+        #set ($paginationParams.totalItems = $totalHits)
+        #set ($paginationParams.url = $doc.getURL($xcontext.action, $request.getQueryString().replaceAll('(^|&amp;)firstIndex=[^&amp;]++&amp;?', '$1')))
+        {{html}}#pagination($paginationParams){{/html}}
+      #end
+      #foreach($extension in $extensions)
+        #displayExtension($extension)
+      #end
+      #if ($hasPagination)
+        #set ($discard = $paginationParams.put('position', 'bottom'))
+        {{html}}#pagination($paginationParams){{/html}}
       #end
     #end
   #end
-#else
-  #if ("$!{request.searchextension}" != '' || "$!{request.extensionid}" != '')
-    #displayExtensionSearchBar()
-
-  #end
-#if ($request.extensionid &amp;&amp; $request.extensionversion)
-  #set ($extensions = [$extensionManager.resolve($request.extensionid, $request.extensionversion)])
-#elseif ("$!request.searchextension" != '')
-  #set ($paginationParams = {})
-  ## Dump whitespace generated by the pagination macro
-  #set ($discard = "#paginationPrepareParams($paginationParams)")
-  #set ($extensions = $extensionManager.search($request.searchextension, $paginationParams.firstItem, $paginationParams.itemsPerPage))
-#else
-  #set ($extensions = false)
+  )))
 #end
-#if (!$extensions)
-  ## Display the search form
-  {{html clean="false"}}
-  &lt;form action="$escapetool.xml($doc.getURL($xcontext.action, $request.getQueryString()))" method="post" class="xform"&gt;
-    &lt;fieldset&gt;
-      &lt;label for="searchextension"&gt;$msg.get('extensions.search.title')&lt;br /&gt;&lt;input type="text" name="searchextension" id="searchextension" /&gt;&lt;/label&gt;
-      &lt;span class="buttonwrapper"&gt;&lt;input type="submit" value="$msg.get('extensions.search.submit')" class="button" /&gt;&lt;/span&gt;
-    &lt;/fieldset&gt;
-  &lt;/form&gt;
-  &lt;form action="$escapetool.xml($doc.getURL($xcontext.action, $request.getQueryString()))" method="post" class="xform"&gt;
-    &lt;fieldset id="advancedextensionsearch"&gt;
-      &lt;div id="advancedextensionsearch-body"&gt;&lt;/div&gt;
-      &lt;legend&gt;&lt;a href="#advancedextensionsearch-body"&gt;$msg.get('extensions.advancedSearch.title')&lt;/a&gt;&lt;/legend&gt;
-      &lt;div class="plainmessage half hidden"&gt;
-        &lt;input type="hidden" name="xback" value="$escapetool.xml($doc.getURL($xcontext.action, $request.queryString))" /&gt;
-        &lt;dl&gt;
-        &lt;dt&gt;&lt;label for="advancedextensionsearch-id"&gt;$msg.get('extensions.advancedSearch.id.label')&lt;/label&gt;&lt;/dt&gt;
-        &lt;dd&gt;&lt;input type="text" name="extensionid" id="advancedextensionsearch-id" value="" /&gt;&lt;/dd&gt;
-        &lt;dt&gt;&lt;label for="advancedextensionsearch-version"&gt;$msg.get('extensions.advancedSearch.version.label')&lt;/label&gt;&lt;/dt&gt;
-        &lt;dd&gt;&lt;input type="text" name="extensionversion" id="advancedextensionsearch-version" value="" /&gt;&lt;/dd&gt;
-        &lt;/dl&gt;
-        &lt;p&gt;&lt;span class="buttonwrapper"&gt;&lt;input type="submit" name="actioninstall" value="$msg.get('extensions.advancedSearch.actions.submit')" class="button" /&gt;&lt;/span&gt;
-           &lt;span class="buttonwrapper"&gt;&lt;a href="#searchextension" class="actioncancel secondary button"/&gt;$msg.get('extensions.advancedSearch.actions.cancel')&lt;/a&gt;&lt;/span&gt;&lt;/p&gt;
-      &lt;/div&gt;
-    &lt;/fieldset&gt;
-  &lt;/form&gt;
-  {{/html}}
-
-#elseif ($extensions.size == 0)
-  {{info}}$msg.get('extensions.search.noResults'){{/info}}##
-#else
-  #if ($extensions.totalHits &amp;&amp; $extensions.totalHits &gt; $paginationParams.itemsPerPage)
-    #set ($hasPagination = true)
-    #set ($paginationURL = $doc.getURL($xcontext.action, $request.getQueryString().replaceAll('(^|&amp;)firstIndex=[^&amp;]++&amp;?', '$1')))
-    #if ("$!{request.searchextension}" != '')
-      #set ($paginationURL = "${paginationURL}&amp;searchextension=${request.searchextension}")
-    #end
-    #set($paginationParams.totalItems = $extensions.totalHits)
-    #set($paginationParams.url = $paginationURL)
-    {{html}}#pagination($paginationParams){{/html}}
-  #end
-  #set ($actions = [])
-  #computeXBack()
-  #if ($request.actionshowdetails)
-    #set ($discard = $actions.add("&lt;span class=""buttonwrapper""&gt;&lt;a href=""${xback}"" class=""button""&gt;$msg.get('extensions.actions.back')&lt;/a&gt;&lt;/span&gt;"))
-  #else
-    #set ($discard = $actions.add("&lt;span class=""buttonwrapper""&gt;&lt;input type=""submit"" name=""actionshowdetails"" value=""$msg.get('extensions.actions.showDetails')"" class=""button""/&gt;&lt;/span&gt;&lt;input type=""hidden"" name=""xback"" value=""${xback}"" /&gt;"))
-  #end
-  #if ($hasProgramming)
-    #set ($discard = $actions.add("&lt;span class=""buttonwrapper""&gt;&lt;input type=""submit"" name=""actioninstall"" value=""$msg.get('extensions.actions.install')"" class=""button""/&gt;&lt;/span&gt;"))
-  #end
-  #foreach($extension in $extensions)
-    #displayExtension($extension $actions)
-  #end
-  #if ($hasPagination)
-    #set ($discard = $paginationParams.put('position', 'bottom'))
-    {{html}}#pagination($paginationParams){{/html}}
-  #end
-#end
-#end
-)))
-#end
-{{/velocity}}</content></xwikidoc>
+{{/velocity}}</content>
+</xwikidoc>

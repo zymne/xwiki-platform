@@ -29,6 +29,7 @@ import java.io.StringWriter;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -70,6 +71,7 @@ import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.util.URIUtil;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -80,12 +82,15 @@ import org.hibernate.HibernateException;
 import org.securityfilter.filter.URLPatternMatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.xwiki.bridge.event.ApplicationReadyEvent;
 import org.xwiki.bridge.event.DocumentCreatedEvent;
 import org.xwiki.bridge.event.DocumentCreatingEvent;
 import org.xwiki.bridge.event.DocumentDeletedEvent;
 import org.xwiki.bridge.event.DocumentDeletingEvent;
 import org.xwiki.bridge.event.DocumentUpdatedEvent;
 import org.xwiki.bridge.event.DocumentUpdatingEvent;
+import org.xwiki.bridge.event.WikiDeletedEvent;
+import org.xwiki.bridge.event.WikiReadyEvent;
 import org.xwiki.cache.Cache;
 import org.xwiki.cache.CacheException;
 import org.xwiki.cache.CacheFactory;
@@ -110,6 +115,7 @@ import org.xwiki.observation.EventListener;
 import org.xwiki.observation.ObservationManager;
 import org.xwiki.observation.event.Event;
 import org.xwiki.query.QueryException;
+import org.xwiki.query.QueryFilter;
 import org.xwiki.rendering.macro.wikibridge.WikiMacroInitializer;
 import org.xwiki.rendering.parser.ParseException;
 import org.xwiki.rendering.syntax.Syntax;
@@ -328,40 +334,32 @@ public class XWiki implements EventListener
     /**
      * Used to convert a proper Document Reference to string (standard form).
      */
-    @SuppressWarnings("unchecked")
     private EntityReferenceSerializer<String> defaultEntityReferenceSerializer = Utils
-        .getComponent(EntityReferenceSerializer.class);
+        .getComponent(EntityReferenceSerializer.TYPE_STRING);
 
-    @SuppressWarnings("unchecked")
     private EntityReferenceSerializer<String> localStringEntityReferenceSerializer = Utils.getComponent(
-        EntityReferenceSerializer.class, "local");
+        EntityReferenceSerializer.TYPE_STRING, "local");
 
     private EntityReferenceValueProvider defaultEntityReferenceValueProvider = Utils
-        .getComponent(EntityReferenceValueProvider.class);
-
-    @SuppressWarnings("unchecked")
-    private EntityReferenceSerializer<EntityReference> localReferenceEntityReferenceSerializer = Utils.getComponent(
-        EntityReferenceSerializer.class, "local/reference");
+        .getComponent((Type) EntityReferenceValueProvider.class);
 
     /**
      * Used to resolve a string into a proper Document Reference using the current document's reference to fill the
      * blanks, except for the page name for which the default page name is used instead.
      */
-    @SuppressWarnings("unchecked")
     private DocumentReferenceResolver<String> currentMixedDocumentReferenceResolver = Utils.getComponent(
-        DocumentReferenceResolver.class, "currentmixed");
+        DocumentReferenceResolver.TYPE_STRING, "currentmixed");
 
-    @SuppressWarnings("unchecked")
     private EntityReferenceResolver<String> relativeEntityReferenceResolver = Utils.getComponent(
-        EntityReferenceResolver.class, "relative");
+        EntityReferenceResolver.TYPE_STRING, "relative");
 
-    private SyntaxFactory syntaxFactory = Utils.getComponent(SyntaxFactory.class);
+    private SyntaxFactory syntaxFactory = Utils.getComponent((Type) SyntaxFactory.class);
 
-    private XWikiURLBuilder entityXWikiURLBuilder = Utils.getComponent(XWikiURLBuilder.class, "entity");
+    private XWikiURLBuilder entityXWikiURLBuilder = Utils.getComponent((Type) XWikiURLBuilder.class, "entity");
 
     /**
      * Whether backlinks are enabled or not (cached for performance).
-     *
+     * 
      * @since 3.2M2
      */
     private Boolean hasBacklinks;
@@ -408,7 +406,8 @@ public class XWiki implements EventListener
                 // initialize stub context here instead of during Execution context initialization because during
                 // Execution context initialization, the XWikiContext is not fully initialized (does not contains XWiki
                 // object) which make it unusable
-                Utils.getComponent(XWikiStubContextProvider.class).initialize(context);
+                Utils.<XWikiStubContextProvider> getComponent((Type) XWikiStubContextProvider.class)
+                    .initialize(context);
             } else {
                 context.setWiki(xwiki);
             }
@@ -753,7 +752,8 @@ public class XWiki implements EventListener
         // Prepare the store
         setConfig(config);
 
-        XWikiStoreInterface basestore = Utils.getComponent(XWikiStoreInterface.class, Param("xwiki.store.main.hint","hibernate"));
+        XWikiStoreInterface basestore =
+            Utils.getComponent(XWikiStoreInterface.class, Param("xwiki.store.main.hint", "hibernate"));
 
         // Check if we need to use the cache store..
         boolean nocache = "0".equals(Param("xwiki.store.cache", "1"));
@@ -767,23 +767,24 @@ public class XWiki implements EventListener
         setCriteriaService((XWikiCriteriaService) createClassFromConfig("xwiki.criteria.class",
             "com.xpn.xwiki.criteria.impl.XWikiCriteriaServiceImpl", context));
 
-        setAttachmentStore(Utils
-            .getComponent(XWikiAttachmentStoreInterface.class, Param("xwiki.store.attachment.hint","hibernate")));
+        setAttachmentStore(Utils.<XWikiAttachmentStoreInterface> getComponent(
+            (Type) XWikiAttachmentStoreInterface.class, Param("xwiki.store.attachment.hint", "hibernate")));
 
-        setVersioningStore(Utils
-            .getComponent(XWikiVersioningStoreInterface.class, Param("xwiki.store.versioning.hint","hibernate")));
+        setVersioningStore(Utils.<XWikiVersioningStoreInterface> getComponent(
+            (Type) XWikiVersioningStoreInterface.class, Param("xwiki.store.versioning.hint", "hibernate")));
 
-        setAttachmentVersioningStore(Utils.getComponent(AttachmentVersioningStore.class,
-            hasAttachmentVersioning(context) ? Param("xwiki.store.attachment.versioning.hint","hibernate") : "void"));
+        setAttachmentVersioningStore(Utils.<AttachmentVersioningStore> getComponent(
+            (Type) AttachmentVersioningStore.class,
+            hasAttachmentVersioning(context) ? Param("xwiki.store.attachment.versioning.hint", "hibernate") : "void"));
 
         if (hasRecycleBin(context)) {
-            setRecycleBinStore(Utils.getComponent(XWikiRecycleBinStoreInterface.class,
-                Param("xwiki.store.recyclebin.hint","hibernate")));
+            setRecycleBinStore(Utils.<XWikiRecycleBinStoreInterface> getComponent(
+                (Type) XWikiRecycleBinStoreInterface.class, Param("xwiki.store.recyclebin.hint", "hibernate")));
         }
 
         if (hasAttachmentRecycleBin(context)) {
-            setAttachmentRecycleBinStore(Utils.getComponent(AttachmentRecycleBinStore.class,
-                Param("xwiki.store.attachment.recyclebin.hint","hibernate")));
+            setAttachmentRecycleBinStore(Utils.<AttachmentRecycleBinStore> getComponent(
+                (Type) AttachmentRecycleBinStore.class, Param("xwiki.store.attachment.recyclebin.hint", "hibernate")));
         }
 
         resetRenderingEngine(context);
@@ -809,7 +810,11 @@ public class XWiki implements EventListener
         // that we need DB access to be available (at component initialization) to make this possible.
         registerWikiMacros();
 
-        Utils.getComponent(ObservationManager.class).addListener(this);
+        ObservationManager observationManager = Utils.getComponent((Type) ObservationManager.class);
+        observationManager.addListener(this);
+
+        // Send Event to signal that the application is ready to service requests.
+        observationManager.notify(new ApplicationReadyEvent(), this, context);
     }
 
     /**
@@ -830,7 +835,8 @@ public class XWiki implements EventListener
         getEditModeClass(context);
 
         try {
-            WikiMacroInitializer wikiMacroInitializer = Utils.getComponentManager().lookup(WikiMacroInitializer.class);
+            WikiMacroInitializer wikiMacroInitializer =
+                Utils.getComponentManager().getInstance(WikiMacroInitializer.class);
             wikiMacroInitializer.installOrUpgradeWikiMacroClasses();
         } catch (Exception ex) {
             LOGGER.error("Error while installing / upgrading xwiki classes required for wiki macros.", ex);
@@ -851,7 +857,8 @@ public class XWiki implements EventListener
     protected void registerWikiMacros()
     {
         try {
-            WikiMacroInitializer wikiMacroInitializer = Utils.getComponentManager().lookup(WikiMacroInitializer.class);
+            WikiMacroInitializer wikiMacroInitializer =
+                Utils.getComponentManager().getInstance(WikiMacroInitializer.class);
             wikiMacroInitializer.registerExistingWikiMacros();
         } catch (Exception ex) {
             LOGGER.error("Error while registering wiki macros.", ex);
@@ -925,6 +932,11 @@ public class XWiki implements EventListener
             // Add initdone which will allow to
             // bypass some initializations
             context.put("initdone", "1");
+
+            // Send event to notify listeners that the subwiki is ready
+            ObservationManager observationManager = Utils.getComponent((Type) ObservationManager.class);
+            observationManager.notify(new WikiReadyEvent(wikiName), wikiName, context);
+
         } finally {
             context.setDatabase(database);
         }
@@ -1363,7 +1375,7 @@ public class XWiki implements EventListener
                 originalDocument = new XWikiDocument(doc.getDocumentReference());
             }
 
-            ObservationManager om = Utils.getComponent(ObservationManager.class);
+            ObservationManager om = Utils.getComponent((Type) ObservationManager.class);
 
             // Notify listeners about the document about to be created or updated
 
@@ -1774,16 +1786,13 @@ public class XWiki implements EventListener
                 }
             }
         } catch (Exception ex) {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Exception while parsing template [" + template + "] from skin", ex);
-            }
+            LOGGER.debug("Exception while parsing template [{}] from skin", template, ex);
         }
 
         // Prevent inclusion of templates from other directories
         template = URI.create("/templates/" + template).normalize().toString();
         if (!template.startsWith("/templates/")) {
-            LOGGER.warn("Illegal access, tried to use file [" + template
-                + "] as a template. Possible break-in attempt!");
+            LOGGER.warn("Direct access to template file [{}] refused. Possible break-in attempt!", template);
             return "";
         }
 
@@ -1904,7 +1913,7 @@ public class XWiki implements EventListener
     {
         // TODO: Do a better mapping between generic icon name and physical resource name, especially to be independent
         // of the underlying icon library. Right now we assume it's the Silk icon library.
-        return getSkinFile("icons/silk/" + iconName + ".gif", context);
+        return getSkinFile("icons/silk/" + iconName + ".png", context);
     }
 
     public String getSkinFile(String filename, XWikiContext context)
@@ -2335,15 +2344,6 @@ public class XWiki implements EventListener
     }
 
     /**
-     * @deprecated use {@link #getLanguagePreference(XWikiContext)} instead
-     */
-    @Deprecated
-    public String getDocLanguagePreference(XWikiContext context)
-    {
-        return getLanguagePreference(context);
-    }
-
-    /**
      * First try to find the current language in use from the XWiki context. If none is used and if the wiki is not
      * multilingual use the default language defined in the XWiki preferences. If the wiki is multilingual try to get
      * the language passed in the request. If none was passed try to get it from a cookie. If no language cookie exists
@@ -2744,20 +2744,11 @@ public class XWiki implements EventListener
      */
     private XWikiContext getXWikiContext()
     {
-        Execution execution = Utils.getComponent(Execution.class);
+        Execution execution = Utils.getComponent((Type) Execution.class);
 
         ExecutionContext ec = execution.getContext();
 
         return ec != null ? (XWikiContext) ec.getProperty("xwikicontext") : null;
-    }
-
-    /**
-     * @deprecated user {@link #flushCache(XWikiContext)} instead
-     */
-    @Deprecated
-    public void flushCache()
-    {
-        flushCache(getXWikiContext());
     }
 
     public void flushCache(XWikiContext context)
@@ -2929,6 +2920,7 @@ public class XWiki implements EventListener
      * @deprecated since 3.1M2 edit mode class should be used for this purpose, not the sheet class
      * @see #getEditModeClass(XWikiContext)
      */
+    @Deprecated
     public BaseClass getSheetClass(XWikiContext context) throws XWikiException
     {
         XWikiDocument doc =
@@ -3021,6 +3013,27 @@ public class XWiki implements EventListener
         needsUpdate |= bclass.addTextField("first_name", "First Name", 30);
         needsUpdate |= bclass.addTextField("last_name", "Last Name", 30);
         needsUpdate |= bclass.addTextField("email", "e-Mail", 30);
+        // Email field custom display (email obfuscation).
+        PropertyClass emailProperty = (PropertyClass) bclass.get("email");
+        if (!emailProperty.isCustomDisplayed(context)) {
+            StringBuilder builder = new StringBuilder();
+            builder.append("{{velocity}}\n");
+            builder.append("#if ($xcontext.action == 'edit' || $xcontext.action == 'inline')\n");
+            // Line broken in 2 because it was too long.
+            builder.append("  {{html}}<input id='$prefix$name' type='text'");
+            builder.append(" name='$prefix$name' value='$value' />{{/html}}\n");
+            builder.append("#else\n");
+            builder.append("  ## Allow $obfuscateEmail to be set in some other place.\n");
+            builder.append("  #if(\"$obfuscateEmail\" == 'false')\n");
+            builder.append("    $value\n");
+            builder.append("  #else\n");
+            builder.append("    $value.replaceAll('@.*', '@ xxxxxx')\n");
+            builder.append("  #end\n");
+            builder.append("#end\n");
+            builder.append("{{/velocity}}");
+            emailProperty.setCustomDisplay(builder.toString());
+            needsUpdate = true;
+        }
         needsUpdate |= bclass.addPasswordField("password", "Password", 10);
         needsUpdate |= bclass.addPasswordField("validkey", "Validation Key", 10);
         needsUpdate |= bclass.addBooleanField("active", "Active", "active");
@@ -3034,6 +3047,12 @@ public class XWiki implements EventListener
         needsUpdate |= bclass.addStaticListField("editor", "Default Editor", "---|Text|Wysiwyg");
         needsUpdate |= bclass.addStaticListField("usertype", "User type", "Simple|Advanced");
         needsUpdate |= bclass.addBooleanField("accessibility", "Enable extra accessibility features", "yesno");
+        needsUpdate |= bclass.addBooleanField("displayHiddenDocuments", "Display Hidden Documents", "yesno");
+        needsUpdate |= bclass.addStaticListField("timezone", "Timezone", "---|Etc/GMT-11=GMT-11|Etc/GMT-10=GMT-10|" +
+                "Etc/GMT-9=GMT-9|Etc/GMT-8=GMT-8|Etc/GMT-7=GMT-7|Etc/GMT-6=GMT-6|Etc/GMT-5=GMT-5|Etc/GMT-4=GMT-4|" +
+                "Etc/GMT-3=GMT-3|Etc/GMT-2=GMT-2|Etc/GMT-1=GMT-1|Etc/GMT-0=GMT|Etc/GMT+1=GMT+1|Etc/GMT+2=GMT+2|" +
+                "Etc/GMT+3=GMT+3|Etc/GMT+4=GMT+4|Etc/GMT+5=GMT+5|Etc/GMT+6=GMT+6|Etc/GMT+7=GMT+7|Etc/GMT+8=GMT+8|" +
+                "Etc/GMT+9=GMT+9|Etc/GMT+10=GMT+10|Etc/GMT+11=GMT+11|Etc/GMT+12=GMT+12");
 
         // New fields for the XWiki 1.0 skin
         needsUpdate |= bclass.addTextField("skin", "skin", 30);
@@ -3043,7 +3062,7 @@ public class XWiki implements EventListener
         needsUpdate |= setClassDocumentFields(doc, "XWiki User Class");
 
         // Use XWikiUserSheet to display documents having XWikiUsers objects if no other class sheet is specified.
-        SheetBinder classSheetBinder = Utils.getComponent(SheetBinder.class, "class");
+        SheetBinder classSheetBinder = Utils.getComponent((Type) SheetBinder.class, "class");
         if (classSheetBinder.getSheets(doc).isEmpty()) {
             DocumentReference sheet = new DocumentReference(context.getDatabase(), SYSTEM_SPACE, "XWikiUserSheet");
             needsUpdate |= classSheetBinder.bind(doc, sheet);
@@ -3213,7 +3232,16 @@ public class XWiki implements EventListener
             needsUpdate = true;
         }
 
-        SheetBinder documentSheetBinder = Utils.getComponent(SheetBinder.class, "document");
+        needsUpdate |= bclass.addBooleanField("showannotations", "Show document annotations", "yesno");
+        needsUpdate |= bclass.addBooleanField("showcomments", "Show document comments", "yesno");
+        needsUpdate |= bclass.addBooleanField("showattachments", "Show document attachments", "yesno");
+        needsUpdate |= bclass.addBooleanField("showhistory", "Show document history", "yesno");
+        needsUpdate |= bclass.addBooleanField("showinformation", "Show document information", "yesno");
+        needsUpdate |= bclass.addBooleanField("editcomment", "Enable version summary", "yesno");
+        needsUpdate |= bclass.addBooleanField("editcomment_mandatory", "Make version summary mandatory", "yesno");
+        needsUpdate |= bclass.addBooleanField("minoredit", "Enable minor edits", "yesno");
+
+        SheetBinder documentSheetBinder = Utils.getComponent((Type) SheetBinder.class, "document");
         boolean withoutDocumentSheets = documentSheetBinder.getSheets(doc).isEmpty();
         if (withoutDocumentSheets) {
             // Bind a document sheet to prevent the default class sheet from being used.
@@ -3226,7 +3254,7 @@ public class XWiki implements EventListener
         }
 
         // Use AdminSheet to display documents having XWikiPreferences objects if no other class sheet is specified.
-        SheetBinder classSheetBinder = Utils.getComponent(SheetBinder.class, "class");
+        SheetBinder classSheetBinder = Utils.getComponent((Type) SheetBinder.class, "class");
         if (classSheetBinder.getSheets(doc).isEmpty()) {
             DocumentReference sheet = new DocumentReference(context.getDatabase(), SYSTEM_SPACE, "AdminSheet");
             needsUpdate |= classSheetBinder.bind(doc, sheet);
@@ -3254,7 +3282,7 @@ public class XWiki implements EventListener
         needsUpdate |= setClassDocumentFields(doc, "XWiki Group Class");
 
         // Use XWikiGroupSheet to display documents having XWikiGroups objects if no other class sheet is specified.
-        SheetBinder classSheetBinder = Utils.getComponent(SheetBinder.class, "class");
+        SheetBinder classSheetBinder = Utils.getComponent((Type) SheetBinder.class, "class");
         if (classSheetBinder.getSheets(doc).isEmpty()) {
             DocumentReference sheet = new DocumentReference(context.getDatabase(), SYSTEM_SPACE, "XWikiGroupSheet");
             needsUpdate |= classSheetBinder.bind(doc, sheet);
@@ -3353,6 +3381,7 @@ public class XWiki implements EventListener
         needsUpdate |= bclass.addNumberField("replyto", "Reply To", 5, "integer");
         needsUpdate |= bclass.addDateField("date", "Date");
         needsUpdate |= bclass.addTextAreaField("comment", "Comment", 40, 5);
+
         needsUpdate |= setClassDocumentFields(doc, "XWiki Comment Class");
 
         if (needsUpdate) {
@@ -3385,7 +3414,7 @@ public class XWiki implements EventListener
         needsUpdate |= setClassDocumentFields(doc, "XWiki Skin Class");
 
         // Use XWikiSkinsSheet to display documents having XWikiSkins objects if no other class sheet is specified.
-        SheetBinder classSheetBinder = Utils.getComponent(SheetBinder.class, "class");
+        SheetBinder classSheetBinder = Utils.getComponent((Type) SheetBinder.class, "class");
         if (classSheetBinder.getSheets(doc).isEmpty()) {
             DocumentReference sheet = new DocumentReference(context.getDatabase(), SYSTEM_SPACE, "XWikiSkinsSheet");
             needsUpdate |= classSheetBinder.bind(doc, sheet);
@@ -3848,7 +3877,7 @@ public class XWiki implements EventListener
     public int createUser(String userName, Map<String, ? > map, EntityReference parentReference, String content,
         Syntax syntax, String userRights, XWikiContext context) throws XWikiException
     {
-        BaseClass baseclass = getUserClass(context);
+        BaseClass userClass = getUserClass(context);
 
         try {
             // TODO: Verify existing user
@@ -3859,10 +3888,10 @@ public class XWiki implements EventListener
                 return -3;
             }
 
+            DocumentReference userClassReference = userClass.getDocumentReference();
             BaseObject userObject =
-                doc.newXObject(
-                    this.localReferenceEntityReferenceSerializer.serialize(baseclass.getDocumentReference()), context);
-            baseclass.fromMap(map, userObject);
+                doc.newXObject(userClassReference.removeParent(userClassReference.getWikiReference()), context);
+            userClass.fromMap(map, userObject);
 
             doc.setParentReference(parentReference);
             doc.setContent(content);
@@ -3912,21 +3941,17 @@ public class XWiki implements EventListener
 
     protected void addUserToGroup(String userName, String groupName, XWikiContext context) throws XWikiException
     {
-        BaseClass groupClass = getGroupClass(context);
         XWikiDocument groupDoc = getDocument(groupName, context);
 
+        DocumentReference groupClassReference = getGroupClass(context).getDocumentReference();
         BaseObject memberObject =
-            groupDoc.newXObject(
-                this.localReferenceEntityReferenceSerializer.serialize(groupClass.getDocumentReference()), context);
+            groupDoc.newXObject(groupClassReference.removeParent(groupClassReference.getWikiReference()), context);
 
         memberObject.setStringValue("member", userName);
 
-        if (groupDoc.isNew()) {
-            saveDocument(groupDoc, context.getMessageTool().get("core.comment.addedUserToGroup"), context);
-        } else {
-            // TODO Fix use of deprecated call.
-            getHibernateStore().saveXWikiObject(memberObject, context, true);
-        }
+        this.saveDocument(groupDoc,
+                          context.getMessageTool().get("core.comment.addedUserToGroup"),
+                          context);
 
         try {
             XWikiGroupService gservice = getGroupService(context);
@@ -3951,18 +3976,18 @@ public class XWiki implements EventListener
     public void protectUserPage(String userName, String userRights, XWikiDocument doc, XWikiContext context)
         throws XWikiException
     {
-        BaseClass rclass = getRightsClass(context);
+        DocumentReference rightClassReference = getRightsClass(context).getDocumentReference();
 
-        EntityReference rightClassReference =
-            this.localReferenceEntityReferenceSerializer.serialize(rclass.getDocumentReference());
+        EntityReference relativeRightClassReference =
+            rightClassReference.removeParent(rightClassReference.getWikiReference());
 
         // Add protection to the page
-        BaseObject newrightsobject = doc.newXObject(rightClassReference, context);
+        BaseObject newrightsobject = doc.newXObject(relativeRightClassReference, context);
         newrightsobject.setLargeStringValue("groups", "XWiki.XWikiAdminGroup");
         newrightsobject.setStringValue("levels", userRights);
         newrightsobject.setIntValue("allow", 1);
 
-        BaseObject newuserrightsobject = doc.newXObject(rightClassReference, context);
+        BaseObject newuserrightsobject = doc.newXObject(relativeRightClassReference, context);
         newuserrightsobject.setLargeStringValue("users", userName);
         newuserrightsobject.setStringValue("levels", userRights);
         newuserrightsobject.setIntValue("allow", 1);
@@ -4628,10 +4653,11 @@ public class XWiki implements EventListener
             WikiReference targetWikiReference = new WikiReference(targetWiki);
             for (String docname : list) {
                 DocumentReference sourceDocumentReference = this.currentMixedDocumentReferenceResolver.resolve(docname);
-                sourceDocumentReference = sourceDocumentReference.replaceParent(
-                    sourceDocumentReference.getWikiReference(), sourceWikiReference);
-                DocumentReference targetDocumentReference = sourceDocumentReference.replaceParent(
-                    sourceWikiReference, targetWikiReference);
+                sourceDocumentReference =
+                    sourceDocumentReference.replaceParent(sourceDocumentReference.getWikiReference(),
+                        sourceWikiReference);
+                DocumentReference targetDocumentReference =
+                    sourceDocumentReference.replaceParent(sourceWikiReference, targetWikiReference);
                 copyDocument(sourceDocumentReference, targetDocumentReference, language, context);
                 nb++;
             }
@@ -4674,143 +4700,6 @@ public class XWiki implements EventListener
         throws XWikiException
     {
         return copySpaceBetweenWikis(null, sourceWiki, targetWiki, language, clean, context);
-    }
-
-    /**
-     * @deprecated use WikiManager plugin instead
-     */
-    @Deprecated
-    public int createNewWiki(String wikiName, String wikiUrl, String wikiAdmin, String baseWikiName,
-        String description, String wikilanguage, boolean failOnExist, XWikiContext context) throws XWikiException
-    {
-        String database = context.getDatabase();
-        wikiName = wikiName.toLowerCase();
-
-        try {
-            XWikiDocument userdoc = getDocument(wikiAdmin, context);
-
-            // User does not exist
-            if (userdoc.isNew()) {
-                if (LOGGER.isErrorEnabled()) {
-                    LOGGER.error("Wiki creation (" + wikiName + "," + wikiUrl + "," + wikiAdmin + ") failed: "
-                        + "user does not exist");
-                }
-                return -2;
-            }
-
-            // User is not active
-            if (!(userdoc.getIntValue("XWiki.XWikiUsers", "active") == 1)) {
-                if (LOGGER.isErrorEnabled()) {
-                    LOGGER.error("Wiki creation (" + wikiName + "," + wikiUrl + "," + wikiAdmin + ") failed: "
-                        + "user is not active");
-                }
-                return -3;
-            }
-
-            String wikiForbiddenList = Param("xwiki.virtual.reserved_wikis");
-            if (Util.contains(wikiName, wikiForbiddenList, ", ")) {
-                if (LOGGER.isErrorEnabled()) {
-                    LOGGER.error("Wiki creation (" + wikiName + "," + wikiUrl + "," + wikiAdmin + ") failed: "
-                        + "wiki name is forbidden");
-                }
-                return -4;
-            }
-
-            String wikiServerPage = "XWikiServer" + wikiName.substring(0, 1).toUpperCase() + wikiName.substring(1);
-            // Verify is server page already exist
-            XWikiDocument serverdoc = getDocument(SYSTEM_SPACE, wikiServerPage, context);
-            if (serverdoc.isNew()) {
-                // clear entry in virtual wiki cache
-                this.virtualWikiMap.remove(wikiUrl);
-
-                // Create Wiki Server page
-                serverdoc.setStringValue(VIRTUAL_WIKI_DEFINITION_CLASS_REFERENCE, "server", wikiUrl);
-                serverdoc.setStringValue(VIRTUAL_WIKI_DEFINITION_CLASS_REFERENCE, "owner", wikiAdmin);
-                if (description != null) {
-                    serverdoc.setLargeStringValue(VIRTUAL_WIKI_DEFINITION_CLASS_REFERENCE, "description", description);
-                }
-                if (wikilanguage != null) {
-                    serverdoc.setStringValue(VIRTUAL_WIKI_DEFINITION_CLASS_REFERENCE, "language", wikilanguage);
-                }
-                if (!getDefaultDocumentSyntax().equals(Syntax.XWIKI_1_0.toIdString())) {
-                    serverdoc.setContent("{{include document=\"XWiki.XWikiServerForm\"/}}\n");
-                    serverdoc.setSyntax(Syntax.XWIKI_2_0);
-                } else {
-                    serverdoc.setContent("#includeForm(\"XWiki.XWikiServerForm\")\n");
-                    serverdoc.setSyntax(Syntax.XWIKI_1_0);
-                }
-                serverdoc.setParentReference(VIRTUAL_WIKI_DEFINITION_CLASS_REFERENCE);
-                saveDocument(serverdoc, context);
-            } else {
-                // If we are not allowed to continue if server page already exists
-                if (failOnExist) {
-                    if (LOGGER.isErrorEnabled()) {
-                        LOGGER.error("Wiki creation (" + wikiName + "," + wikiUrl + "," + wikiAdmin + ") failed: "
-                            + "wiki server page already exists");
-                    }
-                    return -5;
-                } else if (LOGGER.isWarnEnabled()) {
-                    LOGGER.warn("Wiki creation (" + wikiName + "," + wikiUrl + "," + wikiAdmin + ") failed: "
-                        + "wiki server page already exists");
-                }
-            }
-
-            // Create wiki database
-            try {
-                context.setDatabase(getDatabase());
-                getStore().createWiki(wikiName, context);
-            } catch (XWikiException e) {
-                if (LOGGER.isErrorEnabled()) {
-                    if (e.getCode() == 10010) {
-                        LOGGER.error("Wiki creation (" + wikiName + "," + wikiUrl + "," + wikiAdmin + ") failed: "
-                            + "wiki database already exists");
-                    } else if (e.getCode() == 10011) {
-                        LOGGER.error("Wiki creation (" + wikiName + "," + wikiUrl + "," + wikiAdmin + ") failed: "
-                            + "wiki database creation failed");
-                    } else {
-                        LOGGER.error("Wiki creation (" + wikiName + "," + wikiUrl + "," + wikiAdmin + ") failed: "
-                            + "wiki database creation threw exception", e);
-                    }
-                }
-            } catch (Exception e) {
-                LOGGER.error("Wiki creation (" + wikiName + "," + wikiUrl + "," + wikiAdmin + ") failed: "
-                    + "wiki database creation threw exception", e);
-            }
-
-            try {
-                updateDatabase(wikiName, true, false, context);
-            } catch (Exception e) {
-                LOGGER.error("Wiki creation (" + wikiName + "," + wikiUrl + "," + wikiAdmin + ") failed: "
-                    + "wiki database shema update threw exception", e);
-                return -6;
-            }
-
-            // Copy base wiki
-            int nb = copyWiki(baseWikiName, wikiName, wikilanguage, context);
-            // Save the number of docs copied in the context
-            context.put("nbdocs", Integer.valueOf(nb));
-
-            // Create user page in his wiki
-            // Let's not create it anymore.. this makes the creator loose
-            // super admin rights on his wiki
-            // copyDocument(wikiAdmin, getDatabase(), wikiName, wikilanguage, context);
-
-            // Modify rights in user wiki
-            context.setDatabase(wikiName);
-            /*
-             * XWikiDocument wikiprefdoc = getDocument("XWiki.XWikiPreferences", context);
-             * wikiprefdoc.setStringValue("XWiki.XWikiGlobalRights", "users", wikiAdmin);
-             * wikiprefdoc.setStringValue("XWiki.XWikiGlobalRights", "levels", "admin, edit");
-             * wikiprefdoc.setIntValue("XWiki.XWikiGlobalRights", "allow", 1); saveDocument(wikiprefdoc, context);
-             */
-            return 1;
-        } catch (Exception e) {
-            LOGGER.error("Wiki creation (" + wikiName + "," + wikiUrl + "," + wikiAdmin + ") failed: "
-                + "wiki creation threw exception", e);
-            return -10;
-        } finally {
-            context.setDatabase(database);
-        }
     }
 
     public String getEncoding()
@@ -5746,7 +5635,9 @@ public class XWiki implements EventListener
     public String getUserTimeZone(XWikiContext context)
     {
         String tz = getUserPreference("timezone", context);
-        if ((tz == null) || (tz.equals(""))) {
+        // We perform this verification ourselves since TimeZone#getTimeZone(String) with an invalid parameter returns
+        // GMT and not the system default.
+        if (!ArrayUtils.contains(TimeZone.getAvailableIDs(), tz)) {
             String defaultTz = TimeZone.getDefault().getID();
             return Param("xwiki.timezone", defaultTz);
         } else {
@@ -6066,7 +5957,8 @@ public class XWiki implements EventListener
     public List<String> getSpaces(XWikiContext context) throws XWikiException
     {
         try {
-            return getStore().getQueryManager().getNamedQuery("getSpaces").execute();
+            return getStore().getQueryManager().getNamedQuery("getSpaces")
+                    .addFilter(Utils.<QueryFilter>getComponent(QueryFilter.class, "hidden")).execute();
         } catch (QueryException ex) {
             throw new XWikiException(0, 0, ex.getMessage(), ex);
         }
@@ -6075,8 +5967,9 @@ public class XWiki implements EventListener
     public List<String> getSpaceDocsName(String spaceName, XWikiContext context) throws XWikiException
     {
         try {
-            return getStore().getQueryManager().getNamedQuery("getSpaceDocsName").bindValue("space", spaceName)
-                .execute();
+            return getStore().getQueryManager().getNamedQuery("getSpaceDocsName")
+                    .addFilter(Utils.<QueryFilter>getComponent(QueryFilter.class, "hidden"))
+                    .bindValue("space", spaceName).execute();
         } catch (QueryException ex) {
             throw new XWikiException(0, 0, ex.getMessage(), ex);
         }
@@ -6156,7 +6049,8 @@ public class XWiki implements EventListener
     {
         try {
             // refreshes all Links of each doc of the wiki
-            List<String> docs = getStore().getQueryManager().getNamedQuery("getAllDocuments").execute();
+            List<String> docs = getStore().getQueryManager().getNamedQuery("getAllDocuments")
+                    .addFilter(Utils.<QueryFilter>getComponent(QueryFilter.class, "hidden")).execute();
             for (int i = 0; i < docs.size(); i++) {
                 XWikiDocument myDoc = this.getDocument(docs.get(i), context);
                 myDoc.getStore().saveLinks(myDoc, context, true);
@@ -7102,6 +6996,10 @@ public class XWiki implements EventListener
             needsUpdate = true;
             doc.setTitle(title);
         }
+        if (!doc.isHidden()) {
+            needsUpdate = true;
+            doc.setHidden(true);
+        }
 
         // Use ClassSheet to display the class document if no other sheet is explicitly specified.
         SheetBinder documentSheetBinder = Utils.getComponent(SheetBinder.class, "document");
@@ -7188,14 +7086,14 @@ public class XWiki implements EventListener
         return "1".equals(Param("xwiki.title.compatibility", "0"));
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.xwiki.observation.EventListener#onEvent(org.xwiki.observation.event.Event, java.lang.Object,
-     *      java.lang.Object)
-     */
+    @Override
     public void onEvent(Event event, Object source, Object data)
     {
+        if (event instanceof WikiDeletedEvent) {
+            getVirtualWikiList().remove(((WikiDeletedEvent) event).getWikiId());
+            return;
+        }
+
         XWikiDocument doc = (XWikiDocument) source;
         XWikiContext context = (XWikiContext) data;
 
@@ -7205,8 +7103,9 @@ public class XWiki implements EventListener
             if ("plugins".equals(modifiedProperty)) {
                 onPluginPreferenceEvent(event, doc, context);
             } else if ("backlinks".equals(modifiedProperty)) {
-                this.hasBacklinks = doc.getXObject((ObjectReference) reference.getParent()).getIntValue("backlinks",
-                    (int) ParamAsLong("xwiki.backlinks", 0)) == 1;
+                this.hasBacklinks =
+                    doc.getXObject((ObjectReference) reference.getParent()).getIntValue("backlinks",
+                        (int) ParamAsLong("xwiki.backlinks", 0)) == 1;
             }
         } else if (event instanceof XObjectEvent) {
             onServerObjectEvent(event, doc, context);
@@ -7249,6 +7148,7 @@ public class XWiki implements EventListener
             add(new XObjectPropertyAddedEvent(XWIKIPREFERENCE_PROPERTY_REFERENCE));
             add(new XObjectPropertyDeletedEvent(XWIKIPREFERENCE_PROPERTY_REFERENCE));
             add(new XObjectPropertyUpdatedEvent(XWIKIPREFERENCE_PROPERTY_REFERENCE));
+            add(new WikiDeletedEvent());
         }
     };
 

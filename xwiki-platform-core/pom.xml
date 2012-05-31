@@ -27,7 +27,7 @@
   <parent>
     <groupId>org.xwiki.platform</groupId>
     <artifactId>xwiki-platform</artifactId>
-    <version>3.4-SNAPSHOT</version>
+    <version>4.1-SNAPSHOT</version>
   </parent>
   <artifactId>xwiki-platform-core</artifactId>
   <name>XWiki Platform - Core - Parent POM</name>
@@ -37,7 +37,6 @@
     <gwt.version>2.4.0</gwt.version>
     <gwt.maven.plugin.version>2.4.0</gwt.maven.plugin.version>
     <smartgwt.version>3.0</smartgwt.version>
-    <restlet.version>2.0.10</restlet.version>
   </properties>
   <dependencies>
     <dependency>
@@ -47,7 +46,7 @@
     </dependency>
     <dependency>
       <groupId>org.hamcrest</groupId>
-      <artifactId>hamcrest-core</artifactId>
+      <artifactId>hamcrest-library</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -81,25 +80,25 @@
       <dependency>
         <groupId>org.codehaus.groovy</groupId>
         <artifactId>groovy-all</artifactId>
-        <version>1.8.5</version>
+        <version>1.8.6</version>
       </dependency>
       <!-- Jython engine -->
       <dependency>
         <groupId>org.python</groupId>
         <artifactId>jython-standalone</artifactId>
-        <version>2.5.2-xwiki</version>
+        <version>2.5.2</version>
       </dependency>
       <!-- JFreeChart -->
       <dependency>
-        <groupId>jfree</groupId>
+        <groupId>org.jfree</groupId>
         <artifactId>jfreechart</artifactId>
-        <version>1.0.13</version>
+        <version>1.0.14</version>
       </dependency>
       <!-- Used on remote observation and also by JBossCache/Infinispan (even if it does not really use it) -->
       <dependency>
         <groupId>org.jgroups</groupId>
         <artifactId>jgroups</artifactId>
-        <version>2.12.2.Final</version>
+        <version>3.0.10.Final</version>
       </dependency>
       <!-- Standard dependencies used in GWT modules -->
       <dependency>
@@ -218,6 +217,47 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>clirr-maven-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <exclude>**/internal/**</exclude>
+            <!-- Remove the following excludes after we release the current version as final -->
+            <exclude>org/xwiki/gwt/wysiwyg/client/diff/**</exclude> <!-- Moved diff plugin to new module -->
+            <exclude>org/xwiki/gwt/wysiwyg/client/plugin/sync/**</exclude> <!-- Moved sync plugin to new module -->
+            <exclude>org/xwiki/gwt/wysiwyg/client/Images</exclude> <!-- Moved sync plugin to new module -->
+            <exclude>org/xwiki/gwt/wysiwyg/client/Strings</exclude> <!-- Moved sync plugin to new module -->
+            <exclude>org/xwiki/wysiwyg/server/plugin/sync/**</exclude> <!-- Moved sync plugin to new module -->
+            <exclude>org/xwiki/query/QueryFilter</exclude> <!-- Real API breakage -->
+            <exclude>com/xpn/xwiki/plugin/autotag/**</exclude> <!-- Moved as a new module -->
+            <!-- This class was added in 3.2M2 by error in a user-public package. It's been moved again in the
+                 internal package as it should have been. We don't expect many users to be affected by this. -->
+            <exclude>com/xpn/xwiki/doc/merge/MergeUtils</exclude>
+            <!-- In 2.2M1 we refactored BaseCollection to add getXClass() but we forgot to add it to the
+                 ObjectInterface interface. Even though this could break user we think it's very limited since
+                 nobody should implement directly ObjectInterface; instead everyone should extend BaseClass or
+                 BaseCollection. -->
+            <exclude>com/xpn/xwiki/objects/ObjectInterface</exclude>
+            <!-- The following excludes are needed because we've upgraded from AspectJ 1.6.7 to AspectJ 1.6.11
+                 in 4.0-milestone-1 and AspectJ has changed the way they weave stuff in class files thus leading to
+                 false CLIRR errors (see http://www.eclipse.org/aspectj/doc/released/README-169.html - search for
+                 "Intertype fields preserve visibility and name" for details).
+
+                 Thus we have to add those excludes. However those excludes could hide real breakages and thus before
+                 the release is done the Release Manager must absolutely remove those excludes below and try running
+                 CLIRR with AspectJ 1.6.7 to verify that no breakages have been added. To do so simply edit the
+                 Legacy OldCore pom.xml and add <version>1.6.7</version> for aspectjrt and <version>1.3</version> for
+                 the AspectJ Maven plugin version.
+            -->
+            <exclude>com/xpn/xwiki/XWiki</exclude>
+            <exclude>com/xpn/xwiki/api/XWiki</exclude>
+            <exclude>com/xpn/xwiki/objects/BaseElement</exclude>
+            <exclude>com/xpn/xwiki/plugin/PluginApi</exclude>
+            <!-- End of excludes required for the AspectJ 1.6.7 -> 1.6.11 upgrade -->
+          </excludes>
+        </configuration>
+      </plugin>
     </plugins>
     <extensions>
       <!-- Needed to add support for the "xar" packaging -->
@@ -225,12 +265,6 @@
         <groupId>org.xwiki.commons</groupId>
         <artifactId>xwiki-commons-tool-xar-handlers</artifactId>
         <version>${commons.version}</version>
-      </extension>
-      <!-- Needed to add support for the "functional-test" packaging -->
-      <extension>
-        <groupId>org.xwiki.platform</groupId>
-        <artifactId>xwiki-platform-tool-functional-test-lifecycle</artifactId>
-        <version>${project.version}</version>
       </extension>
     </extensions>
   </build>
@@ -242,6 +276,7 @@
     <module>xwiki-platform-annotations</module>
     <module>xwiki-platform-application-manager</module>
     <module>xwiki-platform-appwithinminutes</module>
+    <module>xwiki-platform-autotag</module>
     <module>xwiki-platform-blog</module>
     <module>xwiki-platform-bridge</module>
     <module>xwiki-platform-cache</module>
@@ -260,13 +295,16 @@
     <module>xwiki-platform-extension</module>
     <module>xwiki-platform-faq</module>
     <module>xwiki-platform-formula</module>
+    <module>xwiki-platform-groovy</module>
     <module>xwiki-platform-gwt</module>
+    <module>xwiki-platform-index</module>
     <module>xwiki-platform-invitation</module>
     <module>xwiki-platform-ircbot</module>
     <module>xwiki-platform-jira</module>
     <module>xwiki-platform-jodatime</module>
-    <module>xwiki-platform-legacy</module>
+    <module>xwiki-platform-ldap</module>
     <module>xwiki-platform-linkchecker</module>
+    <module>xwiki-platform-livetable</module>
     <module>xwiki-platform-mailsender</module>
     <module>xwiki-platform-messagestream</module>
     <module>xwiki-platform-model</module>
@@ -280,6 +318,7 @@
     <module>xwiki-platform-rest</module>
     <module>xwiki-platform-scheduler</module>
     <module>xwiki-platform-search</module>
+    <module>xwiki-platform-security</module>
     <module>xwiki-platform-selenium</module>
     <module>xwiki-platform-sheet</module>
     <module>xwiki-platform-skin</module>
@@ -299,87 +338,19 @@
     <module>xwiki-platform-wysiwyg</module>
     <module>xwiki-platform-xml</module>
     <module>xwiki-platform-xmlrpc</module>
+    <module>xwiki-platform-zipexplorer</module>
   </modules>
   <profiles>
+    <!-- Profile to build Legacy modules -->
     <profile>
-      <!-- We run Clirr in a profile since Cobertura interferes with Clirr and thus we run
-           Cobertura instrumentation in a special profile (when the Cobertura profile is
-           executed, the Clirr one isn't). -->
-      <id>clirr</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>clirr-maven-plugin</artifactId>
-            <configuration>
-              <excludes>
-                <exclude>**/internal/**</exclude>
-                <!-- To be removed when we release 3.4 -->
-                <exclude>org/xwiki/rest/XWikiAuthentication</exclude>
-                <exclude>org/xwiki/rest/XWikiRestletJaxRsApplication</exclude>
-                <exclude>org/xwiki/rest/XWikiRestletServlet</exclude>
-                <exclude>org/xwiki/rest/XWikiSetupCleanupFilter</exclude>
-                <exclude>org/xwiki/rest/resources/BrowserAuthenticationResource</exclude>
-                <!-- To be removed when we release 3.3 -->
-                <exclude>org/xwiki/annotation/reference/IndexedObjectReference</exclude>
-                <exclude>org/xwiki/cache/eviction/EntryEvictionConfiguration</exclude>
-                <exclude>org/xwiki/workspace/WorkspaceManagerException</exclude>
-                <exclude>org/xwiki/model/reference/AttachmentReference</exclude>
-                <exclude>org/xwiki/model/reference/ClassPropertyReference</exclude>
-                <exclude>org/xwiki/model/reference/EntityReference</exclude>
-                <exclude>org/xwiki/model/reference/DocumentReference</exclude>
-                <exclude>org/xwiki/model/reference/ObjectReference</exclude>
-                <exclude>org/xwiki/model/reference/ObjectReferenceResolver</exclude>
-                <exclude>org/xwiki/model/reference/ObjectPropertyReference</exclude>
-                <exclude>org/xwiki/model/reference/ObjectPropertyReferenceResolver</exclude>
-                <exclude>org/xwiki/model/reference/SpaceReference</exclude>
-                <exclude>org/xwiki/model/reference/WikiReference</exclude>
-                <exclude>com/xpn/xwiki/doc/DeletedFilesystemAttachment</exclude>
-                <exclude>com/xpn/xwiki/doc/FilesystemAttachmentContent</exclude>
-                <exclude>com/xpn/xwiki/doc/FilesystemAttachmentContent$1LockingFileInputStream</exclude>
-                <exclude>com/xpn/xwiki/doc/ListAttachmentArchive</exclude>
-                <exclude>com/xpn/xwiki/doc/ListAttachmentArchive$XWikiAttachmentVersionComparitor</exclude>
-                <exclude>com/xpn/xwiki/doc/MutableDeletedFilesystemAttachment</exclude>
-                <exclude>com/xpn/xwiki/store/AttachmentArchiveDeleteRunnable</exclude>
-                <exclude>com/xpn/xwiki/store/AttachmentArchiveSaveRunnable</exclude>
-                <exclude>com/xpn/xwiki/store/AttachmentContentStreamProvider</exclude>
-                <exclude>com/xpn/xwiki/store/FilesystemAttachmentRecycleBinStore</exclude>
-                <exclude>com/xpn/xwiki/store/FilesystemAttachmentRecycleBinStore$1</exclude>
-                <exclude>com/xpn/xwiki/store/FilesystemAttachmentRecycleBinStore$2</exclude>
-                <exclude>com/xpn/xwiki/store/FilesystemAttachmentRecycleBinStore$NewestFirstDateComparitor</exclude>
-                <exclude>com/xpn/xwiki/store/FilesystemAttachmentStore</exclude>
-                <exclude>com/xpn/xwiki/store/FilesystemAttachmentStore$1</exclude>
-                <exclude>com/xpn/xwiki/store/FilesystemAttachmentStore$AttachmentDeleteTransactionRunnable</exclude>
-                <exclude>com/xpn/xwiki/store/FilesystemAttachmentStore$AttachmentDeleteTransactionRunnable$1</exclude>
-                <exclude>com/xpn/xwiki/store/FilesystemAttachmentStore$AttachmentSaveTransactionRunnable</exclude>
-                <exclude>com/xpn/xwiki/store/FilesystemAttachmentStore$AttachmentSaveTransactionRunnable$1</exclude>
-                <exclude>com/xpn/xwiki/store/FilesystemAttachmentStore$AttachmentSaveTransactionRunnable$2</exclude>
-                <exclude>com/xpn/xwiki/store/FilesystemAttachmentVersioningStore</exclude>
-                <exclude>com/xpn/xwiki/store/HibernateTransaction</exclude>
-                <exclude>com/xpn/xwiki/store/XWikiHibernateTransaction</exclude>
-                <exclude>com/xpn/xwiki/plugin/applicationmanager/ApplicationManagerPlugin</exclude>
-                <exclude>com/xpn/xwiki/plugin/applicationmanager/ApplicationManagerPlugin$1</exclude>
-                <exclude>org/xwiki/annotation/event/AbstractAnnotationEvent</exclude>
-                <exclude>org/xwiki/gwt/wysiwyg/client/plugin/line/MozillaLinePlugin</exclude>
-                <exclude>org/xwiki/gwt/wysiwyg/client/plugin/link/ui/AbstractExternalLinkWizardStep</exclude>
-                <exclude>org/xwiki/gwt/wysiwyg/client/plugin/link/ui/WebPageLinkWizardStep</exclude>
-                <exclude>org/xwiki/query/QueryExecutorProvider</exclude> <!-- Use new Provider injection -->
-                <!-- Moved to Legacy -->
-                <exclude>com/xpn/xwiki/api/XWiki</exclude>
-              </excludes>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
-      <properties>
-        <xwiki.clirr.skip>false</xwiki.clirr.skip>
-      </properties>
+      <id>legacy</id>
+      <modules>
+        <module>xwiki-platform-legacy</module>
+      </modules>
     </profile>
     <profile>
-      <id>gwtTestManual</id>
+      <!-- Allows running GWT tests manually -->
+      <id>gwt-test-manual</id>
       <build>
         <plugins>
           <plugin>

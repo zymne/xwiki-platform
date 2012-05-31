@@ -21,9 +21,9 @@ package org.xwiki.container.portlet;
 
 import javax.portlet.PortletContext;
 
-import org.xwiki.component.annotation.ComponentRole;
+import org.xwiki.component.annotation.Role;
 
-@ComponentRole
+@Role
 public interface PortletContainerInitializer
 {
     void initializeRequest(javax.portlet.PortletRequest request, Object xwikiContext)
@@ -33,5 +33,9 @@ public interface PortletContainerInitializer
 
     void initializeSession(javax.portlet.PortletRequest request);
 
+    /**
+     * @deprecated starting with 3.5M1, use the notion of Environment instead
+     */
+    @Deprecated
     void initializeApplicationContext(PortletContext servletContext);
 }

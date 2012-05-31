@@ -8,6 +8,7 @@ com.xpn.xwiki.internal.XWikiStubContextInitializer
 com.xpn.xwiki.internal.cache.DefaultDocumentCache
 com.xpn.xwiki.internal.cache.rendering.DefaultRenderingCache
 com.xpn.xwiki.internal.cache.rendering.DefaultRenderingCacheConfiguration
+com.xpn.xwiki.internal.diff.DiffScriptService
 com.xpn.xwiki.internal.event.AttachmentEventGeneratorListener
 com.xpn.xwiki.internal.event.CommentEventGeneratorListener
 com.xpn.xwiki.internal.event.XClassPropertyEventGeneratorListener
@@ -40,10 +41,8 @@ com.xpn.xwiki.internal.plugin.image.DefaultImageProcessor
 com.xpn.xwiki.internal.query.ConfiguredQueryExecutorProvider
 com.xpn.xwiki.internal.sheet.scripting.SheetScriptService
 com.xpn.xwiki.internal.sheet.ClassSheetBinder
-com.xpn.xwiki.internal.sheet.DefaultSheetManager
 com.xpn.xwiki.internal.sheet.DocumentSheetBinder
-com.xpn.xwiki.internal.sheet.SheetDocumentDisplayer
-com.xpn.xwiki.internal.sheet.SheetRequestInitializer
+com.xpn.xwiki.internal.sheet.DefaultModelBridge
 com.xpn.xwiki.render.DefaultVelocityManager
 com.xpn.xwiki.render.XWikiVelocityContextInitializer
 com.xpn.xwiki.render.XWikiScriptContextInitializer
@@ -53,6 +52,10 @@ com.xpn.xwiki.store.hibernate.query.DefaultQueryExecutor
 com.xpn.xwiki.store.migration.hibernate.HibernateDataMigrationManager
 com.xpn.xwiki.store.migration.hibernate.LegacyDataMigration
 com.xpn.xwiki.store.migration.hibernate.R15428XWIKI2977DataMigration
+com.xpn.xwiki.store.migration.hibernate.R35100XWIKI7564DataMigration
+com.xpn.xwiki.store.migration.hibernate.R35101XWIKI7645DataMigration
+com.xpn.xwiki.store.migration.hibernate.R35102XWIKI7771DataMigration
+com.xpn.xwiki.store.migration.hibernate.R40000XWIKI6990DataMigration
 com.xpn.xwiki.store.migration.hibernate.R4340XWIKI883DataMigration
 com.xpn.xwiki.store.migration.hibernate.R4359XWIKI1459DataMigration
 com.xpn.xwiki.store.migration.hibernate.R6079XWIKI1878DataMigration

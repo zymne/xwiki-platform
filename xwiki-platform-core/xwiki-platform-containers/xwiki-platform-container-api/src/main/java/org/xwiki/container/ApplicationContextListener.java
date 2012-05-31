@@ -19,7 +19,7 @@
  */
 package org.xwiki.container;
 
-import org.xwiki.component.annotation.ComponentRole;
+import org.xwiki.component.annotation.Role;
 
 /**
  * Allows interested components to perform startup / shutdown tasks and be notified when the {@link ApplicationContext}
@@ -27,8 +27,10 @@ import org.xwiki.component.annotation.ComponentRole;
  * 
  * @version $Id$
  * @since 1.9M2
+ * @deprecated starting with 3.5M1, use the notion of Environment instead
  */
-@ComponentRole
+@Role
+@Deprecated
 public interface ApplicationContextListener
 {
     /**

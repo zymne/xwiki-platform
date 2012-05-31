@@ -58,11 +58,6 @@ public class XWikiRightServiceImplTest extends AbstractBridgedXWikiComponentTest
 
     private XWikiDocument group2;
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see junit.framework.TestCase#setUp()
-     */
     @Override
     protected void setUp() throws Exception
     {
@@ -80,6 +75,7 @@ public class XWikiRightServiceImplTest extends AbstractBridgedXWikiComponentTest
         this.mockXWiki.stubs().method("getDocument").with(ANYTHING, eq("WebPreferences"), ANYTHING).will(
             new CustomStub("Implements XWiki.getDocument")
             {
+                @Override
                 public Object invoke(Invocation invocation) throws Throwable
                 {
                     return new XWikiDocument(new DocumentReference(getContext().getDatabase(),
@@ -124,6 +120,7 @@ public class XWikiRightServiceImplTest extends AbstractBridgedXWikiComponentTest
             eq(this.user.getDocumentReference()), ANYTHING, ANYTHING, ANYTHING).will(
             new CustomStub("Implements XWikiGroupService.getAllGroupsReferencesForMember")
             {
+                @Override
                 public Object invoke(Invocation invocation) throws Throwable
                 {
                     XWikiContext context = (XWikiContext) invocation.parameterValues.get(3);
@@ -187,6 +184,7 @@ public class XWikiRightServiceImplTest extends AbstractBridgedXWikiComponentTest
         this.mockXWiki.stubs().method("getDocument").with(eq("XWiki.XWikiPreferences"), ANYTHING).will(
             new CustomStub("Implements XWiki.getDocument")
             {
+                @Override
                 public Object invoke(Invocation invocation) throws Throwable
                 {
                     if (!getContext().getDatabase().equals("wiki2")) {
@@ -387,6 +385,7 @@ public class XWikiRightServiceImplTest extends AbstractBridgedXWikiComponentTest
         this.mockXWiki.stubs().method("getDocument").with(eq("XWiki.XWikiPreferences"), ANYTHING).will(
             new CustomStub("Implements XWiki.getDocument")
             {
+                @Override
                 public Object invoke(Invocation invocation) throws Throwable
                 {
                     if (!getContext().getDatabase().equals("wiki2")) {
@@ -517,6 +516,121 @@ public class XWikiRightServiceImplTest extends AbstractBridgedXWikiComponentTest
             this.rightService.hasAccessLevel("delete", this.user.getFullName(), doc.getFullName(), true, getContext()));
     }
 
+    private void assertAccessLevelForGuestUser(String level, XWikiDocument doc, boolean shouldAllow) throws Exception
+    {
+
+        if (shouldAllow) {
+            assertTrue("Empty wiki should allow " + level + " for guest.",
+                       this.rightService.hasAccessLevel(level, XWikiRightService.GUEST_USER_FULLNAME,
+                                                        doc.getFullName(), getContext()));
+        } else {
+            assertFalse("Empty wiki should deny " + level + " for guest.",
+                        this.rightService.hasAccessLevel(level, XWikiRightService.GUEST_USER_FULLNAME,
+                                                         doc.getFullName(), getContext()));
+        }
+    }
+
+    public void testHasAccessLevelOnEmptyWiki() throws Exception
+    {
+        getContext().setDatabase("xwiki");
+
+        final XWikiDocument doc
+            = new XWikiDocument(new DocumentReference(getContext().getDatabase(), "Space", "Page"));
+
+        final XWikiDocument xwikiPreferences
+            = new XWikiDocument(new DocumentReference(getContext().getDatabase(), "XWiki", "XWikiPreference"));
+
+        this.mockGroupService.stubs().method("getAllGroupsReferencesForMember")
+            .with(ANYTHING, ANYTHING, ANYTHING, ANYTHING).will(
+                  returnValue(Collections.emptyList()));
+
+        this.mockXWiki.stubs().method("getDocument").with(eq(doc.getFullName()), ANYTHING)
+            .will(returnValue(doc));
+
+        this.mockXWiki.stubs().method("getDocument").with(eq("XWiki.XWikiPreferences"), ANYTHING).will(
+            returnValue(xwikiPreferences));
+
+        this.mockXWiki.stubs().method("getXWikiPreference").with(ANYTHING, ANYTHING, ANYTHING).will(
+            returnValue("false"));
+        this.mockXWiki.stubs().method("getXWikiPreferenceAsInt").with(ANYTHING, ANYTHING, ANYTHING)
+            .will(returnValue(0));
+        this.mockXWiki.stubs().method("getSpacePreference").with(ANYTHING, ANYTHING, ANYTHING).will(
+            returnValue("false"));
+        this.mockXWiki.stubs().method("getSpacePreferenceAsInt").with(ANYTHING, ANYTHING, ANYTHING)
+            .will(returnValue(0));
+
+        assertAccessLevelForGuestUser("login"      , doc, true);
+        assertAccessLevelForGuestUser("register"   , doc, true);
+        assertAccessLevelForGuestUser("view"       , doc, true);
+        assertAccessLevelForGuestUser("edit"       , doc, true);
+        assertAccessLevelForGuestUser("delete"     , doc, true);
+        assertAccessLevelForGuestUser("admin"      , doc, true);
+        assertAccessLevelForGuestUser("programming", doc, false);
+    }
+
+    private void assertAccessLevelForAdminUser(String level, XWikiDocument doc, boolean shouldAllow) throws Exception
+    {
+
+        if (shouldAllow) {
+            assertTrue(level + " for admin should be allowed.",
+                       this.rightService.hasAccessLevel(level, getContext().getDatabase() + ":XWiki.Admin",
+                                                        doc.getFullName(), getContext()));
+        } else {
+            assertFalse(level + " for admin should be denied.",
+                        this.rightService.hasAccessLevel(level, getContext().getDatabase() + ":XWiki.Admin",
+                                                         doc.getFullName(), getContext()));
+        }
+    }
+
+    public void testAdminAccessLevels() throws Exception
+    {
+        getContext().setDatabase("xwiki");
+        
+        final XWikiDocument doc
+            = new XWikiDocument(new DocumentReference(getContext().getDatabase(), "Space", "Page"));
+
+        final XWikiDocument xwikiPreferences
+            = new XWikiDocument(new DocumentReference(getContext().getDatabase(), "XWiki", "XWikiPreference"));
+
+        this.mockGroupService.stubs().method("getAllGroupsReferencesForMember")
+            .with(ANYTHING, ANYTHING, ANYTHING, ANYTHING).will(
+                  returnValue(Collections.emptyList()));
+
+        this.mockXWiki.stubs().method("getDocument").with(eq(doc.getFullName()), ANYTHING)
+            .will(returnValue(doc));
+
+        this.mockXWiki.stubs().method("getDocument").with(eq(doc.getPrefixedFullName()), ANYTHING)
+            .will(returnValue(doc));
+
+        this.mockXWiki.stubs().method("getDocument").with(eq("XWiki.XWikiPreferences"), ANYTHING).will(
+            returnValue(xwikiPreferences));
+
+        this.mockXWiki.stubs().method("getXWikiPreference").with(ANYTHING, ANYTHING, ANYTHING).will(
+            returnValue("false"));
+        this.mockXWiki.stubs().method("getXWikiPreferenceAsInt").with(ANYTHING, ANYTHING, ANYTHING)
+            .will(returnValue(0));
+        this.mockXWiki.stubs().method("getSpacePreference").with(ANYTHING, ANYTHING, ANYTHING).will(
+            returnValue("false"));
+        this.mockXWiki.stubs().method("getSpacePreferenceAsInt").with(ANYTHING, ANYTHING, ANYTHING)
+            .will(returnValue(0));
+
+        BaseObject preferencesObject = new BaseObject();
+        preferencesObject.setClassName("XWiki.XWikiGlobalRights");
+        preferencesObject.setStringValue("levels", "admin");
+        preferencesObject.setIntValue("allow", 1);
+        preferencesObject.setStringValue("users", getContext().getDatabase() + ":XWiki.Admin");
+        xwikiPreferences.addXObject(preferencesObject);
+
+        assertAccessLevelForAdminUser("login"      , doc, true);
+        assertAccessLevelForAdminUser("register"   , doc, true);
+        assertAccessLevelForAdminUser("view"       , doc, true);
+        assertAccessLevelForAdminUser("edit"       , doc, true);
+        assertAccessLevelForAdminUser("delete"     , doc, true);
+        assertAccessLevelForAdminUser("admin"      , doc, true);
+        assertAccessLevelForAdminUser("programming", doc, true);
+
+    }
+
     /**
      * Verify that edit rights is not sufficient for editing
      * *.WebPreferences and XWiki.XWikiPreferences, since that can be
@@ -571,6 +685,7 @@ public class XWikiRightServiceImplTest extends AbstractBridgedXWikiComponentTest
         this.mockXWiki.stubs().method("getDocument").with(eq("XWiki.XWikiPreferences"), ANYTHING).will(
             new CustomStub("Implements XWiki.getDocument")
             {
+                @Override
                 public Object invoke(Invocation invocation) throws Throwable
                 {
                     if (!getContext().getDatabase().equals("wiki")) {

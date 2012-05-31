@@ -92,11 +92,7 @@ public class DefaultWikiMacroFactory implements WikiMacroFactory, WikiMacroConst
         return (XWikiContext) this.execution.getContext().getProperty("xwikicontext");
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @since 2.2M1
-     */
+    @Override
     public WikiMacro createWikiMacro(DocumentReference documentReference) throws WikiMacroException
     {
         XWikiDocument doc;
@@ -238,7 +234,7 @@ public class DefaultWikiMacroFactory implements WikiMacroFactory, WikiMacroConst
 
         XDOM xdom;
         try {
-            Parser parser = componentManager.lookup(Parser.class, doc.getSyntax().toIdString());
+            Parser parser = componentManager.getInstance(Parser.class, doc.getSyntax().toIdString());
             xdom = parser.parse(new StringReader(macroCode));
         } catch (ComponentLookupException ex) {
             throw new WikiMacroException("Could not find a parser for macro content", ex);
@@ -251,11 +247,7 @@ public class DefaultWikiMacroFactory implements WikiMacroFactory, WikiMacroConst
             this.componentManager);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @since 2.2M1
-     */
+    @Override
     public boolean containsWikiMacro(DocumentReference documentReference)
     {
         boolean result;

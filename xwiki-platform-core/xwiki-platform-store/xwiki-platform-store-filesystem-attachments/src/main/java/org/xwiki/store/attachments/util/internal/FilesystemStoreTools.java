@@ -23,7 +23,7 @@ import java.io.File;
 import java.util.Date;
 import java.util.Map;
 
-import org.xwiki.component.annotation.ComponentRole;
+import org.xwiki.component.annotation.Role;
 import org.xwiki.model.reference.DocumentReference;
 import org.xwiki.model.reference.AttachmentReference;
 import org.xwiki.store.StreamProvider;
@@ -37,7 +37,7 @@ import org.xwiki.store.TransactionRunnable;
  * @version $Id$
  * @since 3.0M2
  */
-@ComponentRole
+@Role
 public interface FilesystemStoreTools
 {
     /**

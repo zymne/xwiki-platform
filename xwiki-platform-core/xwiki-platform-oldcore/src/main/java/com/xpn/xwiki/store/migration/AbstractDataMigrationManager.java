@@ -17,7 +17,6 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-
 package com.xpn.xwiki.store.migration;
 
 import java.util.ArrayList;
@@ -36,12 +35,16 @@ import java.util.TreeMap;
 import javax.inject.Inject;
 
 import org.slf4j.Logger;
+import org.xwiki.bridge.event.WikiDeletedEvent;
 import org.xwiki.component.manager.ComponentLookupException;
 import org.xwiki.component.manager.ComponentManager;
 import org.xwiki.component.phase.Initializable;
 import org.xwiki.component.phase.InitializationException;
 import org.xwiki.context.Execution;
 import org.xwiki.context.ExecutionContext;
+import org.xwiki.observation.EventListener;
+import org.xwiki.observation.ObservationManager;
+import org.xwiki.observation.event.Event;
 
 import com.xpn.xwiki.XWikiConfig;
 import com.xpn.xwiki.XWikiContext;
@@ -60,6 +63,12 @@ public abstract class AbstractDataMigrationManager implements DataMigrationManag
      */
     @Inject
     protected ComponentManager componentManager;
+
+    /**
+     * Component manager used to access stores and data migrations.
+     */
+    @Inject
+    protected ObservationManager observationManager;
 
     /**
      * Ordered list of migrators that may be applied.
@@ -168,6 +177,30 @@ public abstract class AbstractDataMigrationManager implements DataMigrationManag
     private XWikiDBVersion targetVersion;
 
     /**
+     * Internal class used to clean the database version cache on wiki deletion.
+     */
+    private class WikiDeletedEventListener implements EventListener
+    {
+        @Override
+        public String getName()
+        {
+            return "dbversioncache";
+        }
+
+        @Override
+        public List<Event> getEvents()
+        {
+            return Arrays.<Event>asList(new WikiDeletedEvent());
+        }
+
+        @Override
+        public void onEvent(Event event, Object source, Object data)
+        {
+            versionCache.remove(((WikiDeletedEvent) event).getWikiId());
+        }
+    }
+
+    /**
      * Unified constructor for all subclasses.
      */
     public AbstractDataMigrationManager()
@@ -244,12 +277,14 @@ public abstract class AbstractDataMigrationManager implements DataMigrationManag
                 }
             }
 
-            this.targetVersion = (availableMigrations.size() > 0) ? availableMigrations.lastKey().increment()
+            this.targetVersion = (availableMigrations.size() > 0) ? availableMigrations.lastKey()
                                                                   : new XWikiDBVersion(0);
             this.migrations =  availableMigrations.values();
         } catch (Exception e) {
             throw new InitializationException("Migration Manager initialization failed", e);
         }
+
+        observationManager.addListener(new WikiDeletedEventListener());
     }
 
     /**
@@ -303,12 +338,16 @@ public abstract class AbstractDataMigrationManager implements DataMigrationManag
     public synchronized void initNewDB() throws DataMigrationException {
         lock.lock();
         try {
-            updateSchema();
-            setDBVersion(getLatestVersion());
+            initializeEmptyDB();
         } finally {
             lock.unlock();
         }
     }
+
+    /**
+     * @throws DataMigrationException if any error
+     */
+    protected abstract void initializeEmptyDB() throws DataMigrationException;
 
     /**
      * @param version to set
@@ -331,9 +370,10 @@ public abstract class AbstractDataMigrationManager implements DataMigrationManag
 
     /**
      * Update database schema to the latest structure.
+     * @param migrations the migration that will be executed (since 4.0M1)
      * @throws DataMigrationException if any error
      */
-    protected abstract void updateSchema() throws DataMigrationException;
+    protected abstract void updateSchema(Collection<XWikiMigration> migrations) throws DataMigrationException;
 
     @Override
     public void checkDatabase() throws MigrationRequiredException, DataMigrationException
@@ -501,8 +541,8 @@ public abstract class AbstractDataMigrationManager implements DataMigrationManag
     private void startMigrationsForDatabase() throws DataMigrationException
     {
         try {
-            updateSchema();
             Collection<XWikiMigration> neededMigrations = getNeededMigrations();
+            updateSchema(neededMigrations);
             startMigrations(neededMigrations);
         } catch (Exception e) {
             String message = String.format("Failed to migrate database [%s]...", getXWikiContext().getDatabase());
@@ -522,7 +562,7 @@ public abstract class AbstractDataMigrationManager implements DataMigrationManag
         Collection<XWikiMigration> neededMigrations = new ArrayList<XWikiMigration>();
 
         for (XWikiMigration migration : this.migrations) {
-            if (migration.isForced || (migration.dataMigration.getVersion().compareTo(curversion) >= 0
+            if (migration.isForced || (migration.dataMigration.getVersion().compareTo(curversion) > 0
                                         && migration.dataMigration.shouldExecute(curversion)))
             {
                 neededMigrations.add(migration);
@@ -539,7 +579,7 @@ public abstract class AbstractDataMigrationManager implements DataMigrationManag
                         (migration.isForced ? " (forced)" : "")});
                 }
             } else {
-                logger.info("No storage migration required since current version is [{}]", curversion.toString());
+                logger.info("No storage migration required since current version is [{}]", curversion);
             }
         }
 
@@ -555,7 +595,7 @@ public abstract class AbstractDataMigrationManager implements DataMigrationManag
         SortedMap<XWikiDBVersion, XWikiMigration> forcedMigrations = new TreeMap<XWikiDBVersion, XWikiMigration>();
         for (String hint : getXWikiConfig().getPropertyAsList("xwiki.store.migration.force")) {
             try {
-                DataMigration dataMigration = componentManager.lookup(DataMigration.class, hint);
+                DataMigration dataMigration = componentManager.getInstance(DataMigration.class, hint);
                 forcedMigrations.put(dataMigration.getVersion(), new XWikiMigration(dataMigration, true));
             } catch (ComponentLookupException e) {
                 throw new DataMigrationException("Forced dataMigration " + hint + " component could not be found", e);
@@ -581,7 +621,7 @@ public abstract class AbstractDataMigrationManager implements DataMigrationManag
             migration.dataMigration.migrate();
 
             if (migration.dataMigration.getVersion().compareTo(curversion) > 0) {
-                curversion = migration.dataMigration.getVersion().increment();
+                curversion = migration.dataMigration.getVersion();
                 setDBVersion(curversion);
                 if (logger.isInfoEnabled()) {
                     logger.info("New storage version is now [{}]", getDBVersion());
@@ -590,8 +630,12 @@ public abstract class AbstractDataMigrationManager implements DataMigrationManag
         }
 
         // If migration is launch on an empty DB, properly set the latest DB version
-        if (curversion == null) {
+        if (curversion == null || getLatestVersion().compareTo(curversion) > 0) {
             setDBVersion(getLatestVersion());
+            if (logger.isInfoEnabled() && curversion != null) {
+                logger.info("Latest migration(s) was unneeded, storage now forced to latest version [{}]",
+                    getDBVersion());
+            }
         }
     }
 

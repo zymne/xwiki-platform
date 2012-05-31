@@ -33,6 +33,7 @@ import org.xwiki.component.annotation.Component;
 import org.xwiki.component.phase.Initializable;
 import org.xwiki.context.Execution;
 import org.xwiki.model.reference.AttachmentReference;
+import org.xwiki.environment.Environment;
 import org.xwiki.model.reference.DocumentReference;
 import org.xwiki.model.reference.EntityReferenceSerializer;
 import org.xwiki.store.FileDeleteTransactionRunnable;
@@ -40,6 +41,7 @@ import org.xwiki.store.FileSaveTransactionRunnable;
 import org.xwiki.store.locks.LockProvider;
 import org.xwiki.store.StreamProvider;
 import org.xwiki.store.TransactionRunnable;
+
 
 /**
  * Default tools for getting files to store data in the filesystem.
@@ -114,6 +116,12 @@ public class DefaultFilesystemStoreTools implements FilesystemStoreTools, Initia
     private LockProvider lockProvider;
 
     /**
+     * Used to get store directory.
+     */
+    @Inject
+    private Environment environment;
+
+    /**
      * This is the directory where all of the attachments will stored.
      */
     private File storageDir;
@@ -145,11 +153,7 @@ public class DefaultFilesystemStoreTools implements FilesystemStoreTools, Initia
     @Override
     public void initialize()
     {
-        final XWikiContext context =
-            ((XWikiContext) this.exec.getContext().getProperty("xwikicontext"));
-        final File workDir = context.getWiki().getWorkDirectory(context);
-        this.storageDir = new File(workDir, STORAGE_DIR_NAME);
-
+        this.storageDir = new File(this.environment.getPermanentDirectory(), STORAGE_DIR_NAME);
         deleteEmptyDirs(this.storageDir);
     }
 
