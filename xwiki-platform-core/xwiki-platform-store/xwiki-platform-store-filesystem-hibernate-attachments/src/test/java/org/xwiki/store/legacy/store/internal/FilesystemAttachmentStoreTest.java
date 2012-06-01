@@ -71,6 +71,7 @@ import org.xwiki.store.TransactionRunnable;
 import org.xwiki.test.AbstractMockingComponentTestCase;
 import org.xwiki.store.attachments.adapter.internal.FilesystemHibernateAttachmentStoreAdapter;
 import org.xwiki.store.TransactionProvider;
+import org.xwiki.store.test.internal.AbstractFilesystemAttachmentStoreTest;
 
 /**
  * Tests for FilesystemAttachmentStore.

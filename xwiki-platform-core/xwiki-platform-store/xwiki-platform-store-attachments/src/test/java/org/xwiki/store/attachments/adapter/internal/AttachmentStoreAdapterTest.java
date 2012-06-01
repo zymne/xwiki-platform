@@ -103,9 +103,9 @@ public class AttachmentStoreAdapterTest
         Utils.setComponentManager(cm);
 
         this.jmockContext.checking(new Expectations() {{
-            allowing(cm).lookup(with(any(Class.class)));
+            allowing(cm).getInstance(with(any(Class.class)));
                 will(returnValue(null));
-            allowing(cm).lookup(with(any(Class.class)), with(any(String.class)));
+            allowing(cm).getInstance(with(any(Class.class)), with(any(String.class)));
                 will(returnValue(null));
         }});
 

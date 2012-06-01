@@ -25,7 +25,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.locks.ReadWriteLock;
 
-import com.xpn.xwiki.XWikiContext;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;

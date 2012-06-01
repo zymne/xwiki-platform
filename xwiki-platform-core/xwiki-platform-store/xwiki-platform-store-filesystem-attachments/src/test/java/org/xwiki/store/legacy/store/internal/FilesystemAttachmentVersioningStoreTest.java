@@ -52,6 +52,7 @@ import org.xwiki.store.serialization.xml.internal.AttachmentMetadataSerializer;
 import org.xwiki.store.StartableTransactionRunnable;
 import org.xwiki.test.AbstractMockingComponentTestCase;
 import org.xwiki.store.TransactionProvider;
+import org.xwiki.store.test.internal.AbstractFilesystemAttachmentStoreTest;
 
 /**
  * Tests for FilesystemAttachmentVersioningStore.

@@ -22,20 +22,18 @@
  *
 -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.xwiki.platform</groupId>
     <artifactId>xwiki-platform-store</artifactId>
     <version>4.1-SNAPSHOT</version>
   </parent>
-  <artifactId>xwiki-platform-store-filesystem-hibernate-attachments</artifactId>
-  <name>XWiki Platform - Store - Filesystem/Hibernate - Attachments</name>
-  <description>Stores attachment content on the filesystem and metadata in Hibernate.</description>
+  <artifactId>xwiki-platform-store-filesystem-attachments-test</artifactId>
+  <name>XWiki Platform - Store - Filesystem - Attachments - TestFramework</name>
+  <description>Test framework for modules which depend on filesystem attachment store.</description>
   <dependencies>
-    <dependency>
+    <!--<dependency>
       <groupId>org.xwiki.commons</groupId>
       <artifactId>xwiki-commons-component-api</artifactId>
       <version>${commons.version}</version>
@@ -45,65 +43,45 @@
       <groupId>org.xwiki.platform</groupId>
       <artifactId>xwiki-platform-store-filesystem-attachments</artifactId>
       <version>${project.version}</version>
-    </dependency>
+    </dependency>-->
 
-    <dependency>
-      <groupId>org.xwiki.platform</groupId>
-      <artifactId>xwiki-platform-store-hibernate-attachments</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-
-    <!-- TransactionRunnable -->
-    <dependency>
-      <groupId>org.xwiki.platform</groupId>
-      <artifactId>xwiki-platform-store-transaction</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-
-    <!--
-     * Needed for:
-     * XWikiAttachment, XWikiDocument, XWikiHibernateStore,
-     * XWikiAttachmentStoreInterface, XWikiAttachmentVersioningStore,
-     * XWikiAttachmentRecyclebinStore
-     -->
+    <!-- Utils.setComponentManager() -->
     <dependency>
       <groupId>org.xwiki.platform</groupId>
       <artifactId>xwiki-platform-oldcore</artifactId>
       <version>${project.version}</version>
     </dependency>
 
-
-    <!-- Testing Dependencies -->
-
-    <!-- AbstractFilesystemAttachmentStoreTest -->
+    <!-- Used for getting the persistent storage directory in FilesystemStoreTools. -->
     <dependency>
-      <groupId>org.xwiki.platform</groupId>
-      <artifactId>xwiki-platform-store-filesystem-attachments-test</artifactId>
-      <version>${project.version}</version>
-      <scope>test</scope>
+      <groupId>org.xwiki.commons</groupId>
+      <artifactId>xwiki-commons-environment-api</artifactId>
+      <version>${commons.version}</version>
     </dependency>
 
     <dependency>
       <groupId>org.xwiki.commons</groupId>
       <artifactId>xwiki-commons-test</artifactId>
       <version>${commons.version}</version>
-      <scope>test</scope>
     </dependency>
 
-    <!-- Needed for ClassImposteriser for mocking XWikiContext etc. -->
-    <dependency>
-      <groupId>org.jmock</groupId>
-      <artifactId>jmock-legacy</artifactId>
-      <scope>test</scope>
-    </dependency>
-
-    <!-- For some tests we need to have the Servlet API JAR available -->
     <dependency>
       <groupId>javax.servlet</groupId>
       <artifactId>servlet-api</artifactId>
-      <scope>test</scope>
     </dependency>
+
+    <dependency>
+      <groupId>org.jmock</groupId>
+      <artifactId>jmock</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit-dep</artifactId>
+    </dependency>
+
   </dependencies>
+
   <build>
     <plugins>
       <plugin>
