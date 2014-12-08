@@ -23,29 +23,23 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>org.xwiki.platform</groupId>
-    <artifactId>xwiki-platform-core</artifactId>
-    <version>6.4-SNAPSHOT</version>
+    <groupId>org.xwiki.commons</groupId>
+    <artifactId>xwiki-commons-configuration</artifactId>
+    <version>6.2.2</version>
   </parent>
-  <artifactId>xwiki-platform-extension</artifactId>
-  <name>XWiki Platform - Extension - Parent POM</name>
-  <packaging>pom</packaging>
-  <description>XWiki Platform - Extension - Parent POM</description>
-  <modules>
-    <module>xwiki-platform-extension-cluster</module>
-    <module>xwiki-platform-extension-distribution</module>
-    <module>xwiki-platform-extension-handlers</module>
-    <module>xwiki-platform-extension-script</module>
-    <module>xwiki-platform-extension-ui</module>
-    <module>xwiki-platform-extension-index</module>
-  </modules>
-  <profiles>
-    <profile>
-      <id>integration-tests</id>
-      <modules>
-        <module>xwiki-platform-extension-test-pageobjects</module>
-      </modules>
-    </profile>
-  </profiles>
+  <artifactId>xwiki-commons-configuration-api</artifactId>
+  <name>XWiki Commons - Configuration - API</name>
+  <packaging>jar</packaging>
+  <description>XWiki Commons - Configuration - API</description>
+  <properties>
+    <xwiki.jacoco.instructionRatio>0.00</xwiki.jacoco.instructionRatio>
+  </properties>
+  <dependencies>
+    <dependency>
+      <groupId>org.xwiki.commons</groupId>
+      <artifactId>xwiki-commons-component-api</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+  </dependencies>
 </project>
-
+       

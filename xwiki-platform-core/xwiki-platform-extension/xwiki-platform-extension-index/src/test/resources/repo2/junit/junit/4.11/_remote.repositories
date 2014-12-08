@@ -1,0 +1,10 @@
+#NOTE: This is an Aether internal implementation file, its format can be changed without prior notice.
+#Fri Oct 17 12:46:43 EEST 2014
+junit-4.11.jar>central=
+junit-4.11.pom>xwiki-plugins-releases=
+junit-4.11-sources.jar>xwiki-releases=
+junit-4.11.jar>xwiki-plugins-releases=
+junit-4.11-javadoc.jar>xwiki-releases=
+junit-4.11.pom>central=
+junit-4.11.jar>xwiki-releases=
+junit-4.11.pom>xwiki-releases=

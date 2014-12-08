@@ -1,0 +1,12 @@
+#NOTE: This is an Aether internal implementation file, its format can be changed without prior notice.
+#Mon Oct 27 23:07:08 EET 2014
+xwiki-commons-configuration-api-6.3-milestone-2.pom>=
+xwiki-commons-configuration-api-6.3-milestone-2.jar>xwiki-releases=
+xwiki-commons-configuration-api-6.3-milestone-2-javadoc.jar.asc>=
+xwiki-commons-configuration-api-6.3-milestone-2.jar.asc>=
+xwiki-commons-configuration-api-6.3-milestone-2.pom.asc>=
+xwiki-commons-configuration-api-6.3-milestone-2-sources.jar>=
+xwiki-commons-configuration-api-6.3-milestone-2-javadoc.jar>=
+xwiki-commons-configuration-api-6.3-milestone-2.jar>=
+xwiki-commons-configuration-api-6.3-milestone-2-sources.jar.asc>=
+xwiki-commons-configuration-api-6.3-milestone-2.pom>xwiki-releases=

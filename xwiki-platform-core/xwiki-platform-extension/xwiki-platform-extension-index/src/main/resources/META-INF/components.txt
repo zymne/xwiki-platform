@@ -1,0 +1,2 @@
+org.xwiki.extension.index.internal.DefaultExtensionIndex
+org.xwiki.extension.index.internal.DefaultExtensionConverter
