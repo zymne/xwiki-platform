@@ -54,6 +54,21 @@
       <version>${commons.version}</version>
     </dependency>
   </dependencies>
+
+  <!-- Use this snapshots repository until 6.0 gets released as a final version. -->
+  <repositories>
+    <repository>
+      <id>apache-snapshots</id>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+      <url>https://repository.apache.org/content/repositories/snapshots/</url>
+    </repository>
+  </repositories>
+
   <build>
     <plugins>
       <!-- TODO: Remove this once the module stabilizes. -->
