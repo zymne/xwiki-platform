@@ -23,6 +23,9 @@ import java.util.Locale;
 
 import javax.inject.Provider;
 
+import org.xwiki.localization.LocalizationManager;
+import org.xwiki.localization.Translation;
+import org.xwiki.text.StringUtils;
 import org.xwiki.velocity.tools.ComparisonDateTool;
 
 import com.xpn.xwiki.XWikiContext;
@@ -38,11 +41,18 @@ public class XWikiDateTool extends ComparisonDateTool
     private Provider<XWikiContext> contextProvider;
 
     /**
-     * @param contextProvider the provider to get the {@link XWikiContext} dynamically at runtime
+     * Used to access translations.
      */
-    public XWikiDateTool(Provider<XWikiContext> contextProvider)
+    private LocalizationManager localizationManager;
+
+    /**
+     * @param contextProvider the provider to get the {@link XWikiContext} dynamically at runtime
+     * @param localizationManager used to access translations
+     */
+    public XWikiDateTool(Provider<XWikiContext> contextProvider, LocalizationManager localizationManager)
     {
         this.contextProvider = contextProvider;
+        this.localizationManager = localizationManager;
     }
 
     /**
@@ -52,5 +62,23 @@ public class XWikiDateTool extends ComparisonDateTool
     public Locale getLocale()
     {
         return this.contextProvider.get().getLocale();
+    }
+
+    /**
+     * @since 9.11
+     * @since 10.0RC1
+     */
+    @Override
+    protected String getText(String key, Locale locale)
+    {
+        Locale localeToUse = locale != null ? locale : this.getLocale();
+        Translation translation = localizationManager.getTranslation(key, localeToUse);
+        if (translation != null && translation.getRawSource() instanceof String
+                && StringUtils.isNotBlank((String) translation.getRawSource())) {
+            return (String) translation.getRawSource();
+        }
+
+        // Fallback to the native implementation of ComparisonDateTool.
+        return super.getText(key, localeToUse);
     }
 }

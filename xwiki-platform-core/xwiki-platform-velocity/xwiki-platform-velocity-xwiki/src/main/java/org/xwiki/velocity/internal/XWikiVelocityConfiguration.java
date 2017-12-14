@@ -25,6 +25,7 @@ import javax.inject.Singleton;
 
 import org.xwiki.component.annotation.Component;
 import org.xwiki.component.phase.InitializationException;
+import org.xwiki.localization.LocalizationManager;
 
 import com.xpn.xwiki.XWikiContext;
 
@@ -43,6 +44,9 @@ public class XWikiVelocityConfiguration extends DefaultVelocityConfiguration
     @Inject
     private Provider<XWikiContext> contextProvider;
 
+    @Inject
+    private LocalizationManager localizationManager;
+
     @Override
     public void initialize() throws InitializationException
     {
@@ -50,7 +54,7 @@ public class XWikiVelocityConfiguration extends DefaultVelocityConfiguration
 
         // Override some tools
         this.defaultTools.put("numbertool", new XWikiNumberTool(this.contextProvider));
-        this.defaultTools.put("datetool", new XWikiDateTool(this.contextProvider));
+        this.defaultTools.put("datetool", new XWikiDateTool(this.contextProvider, this.localizationManager));
         this.defaultTools.put("mathttool", new XWikiMathTool(this.contextProvider));
     }
 }
