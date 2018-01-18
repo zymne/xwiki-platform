@@ -1150,4 +1150,30 @@ public class XarExtensionHandlerTest
         Assert.assertFalse(this.oldcore.getSpyXWiki()
             .getDocument(new DocumentReference("newwiki", "space1", "page1"), getXWikiContext()).isNew());
     }
+
+    @Test
+    public void testNonInteractiveUpgradeWithConflict() throws Throwable
+    {
+        // install the first version
+        install(this.localXarExtensiontId1, "wiki", this.contextUser);
+
+        // do some local modifications
+        final DocumentReference documentReference = new DocumentReference("wiki", "Main", "WebHome");
+        XWikiDocument pageBefore = this.oldcore.getSpyXWiki().getDocument(documentReference, getXWikiContext());
+        pageBefore.setContent("My custom homepage.");
+        this.oldcore.getSpyXWiki().saveDocument(pageBefore, getXWikiContext());
+
+        // upgrade
+        try {
+            install(this.localXarExtensiontId2, "wiki", this.contextUser);
+        } catch (Exception e) {
+            // Don't care about error in the logs
+        }
+
+        // Get the page after
+        XWikiDocument pageAfter = this.oldcore.getSpyXWiki().getDocument(documentReference, getXWikiContext());
+
+        Assert.assertEquals("My custom homepage.", pageAfter.getContent());
+
+    }
 }
