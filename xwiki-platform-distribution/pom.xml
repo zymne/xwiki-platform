@@ -32,14 +32,15 @@
   <packaging>pom</packaging>
   <description>Parent pom of the default XWiki distribution. Can also be used as parent for custom distributions.</description>
   <modules>
+    <!-- Sorted Alphabetically -->
+    <module>xwiki-platform-distribution-debian</module>
+    <module>xwiki-platform-distribution-fedora</module>
+    <module>xwiki-platform-distribution-flavor</module>
+    <module>xwiki-platform-distribution-jetty-hsqldb</module>
     <module>xwiki-platform-distribution-ui</module>
     <module>xwiki-platform-distribution-war-dependencies</module>
     <module>xwiki-platform-distribution-war-legacydependencies</module>
     <module>xwiki-platform-distribution-war</module>
-    <module>xwiki-platform-distribution-jetty-hsqldb</module>
-    <module>xwiki-platform-distribution-flavor</module>
-    <module>xwiki-platform-distribution-debian</module>
-    <module>xwiki-platform-distribution-fedora</module>
   </modules>
   <properties>
     <!-- Flavors known to be valid with the current distribution -->
@@ -618,6 +619,12 @@
         <xwiki.db.hbm.xwiki>xwiki.derby.hbm.xml</xwiki.db.hbm.xwiki>
         <xwiki.db.hbm.feeds>feeds.hbm.xml</xwiki.db.hbm.feeds>
       </properties>
+    </profile>
+    <profile>
+      <id>docker</id>
+      <modules>
+        <module>xwiki-platform-distribution-docker</module>
+      </modules>
     </profile>
   </profiles>
 </project>

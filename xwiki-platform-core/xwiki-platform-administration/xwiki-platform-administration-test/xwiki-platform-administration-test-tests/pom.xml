@@ -78,10 +78,11 @@
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
-  <!-- We currently need to depend on mail-ui in the test because it contains the Mail.SendMailConfigClass. We can not have
-    administration-ui depend on mail-ui, because mail-ui already depends on administration-ui which would create a loop. mail-ui
-    just needs the configurable class stuff from administration-ui, so when that gets refactored out, we can fix the dependency
-    directly in administration-ui and not have anything here specific to mail. -->
+    <!-- We currently need to depend on mail-ui in the test because it contains the Mail.SendMailConfigClass.
+         We can not have administration-ui depend on mail-ui, because mail-ui already depends on administration-ui
+         which would create a loop. mail-ui just needs the configurable class stuff from administration-ui, so when
+         that gets refactored out, we can fix the dependency directly in administration-ui and not have anything here
+         specific to mail. -->
     <dependency>
       <groupId>org.xwiki.platform</groupId>
       <artifactId>xwiki-platform-mail-ui</artifactId>
@@ -94,6 +95,15 @@
       <version>1.3</version>
       <scope>test</scope>
     </dependency>
+
+    <dependency>
+      <groupId>com.spotify</groupId>
+      <artifactId>docker-client</artifactId>
+      <version>8.10.1</version>
+      <classifier>shaded</classifier>
+      <scope>test</scope>
+    </dependency>
+
   </dependencies>
   <build>
     <plugins>
@@ -131,6 +141,219 @@
     </plugins>
   </build>
   <profiles>
+    <profile>
+      <!-- Execute the functional tests against an XWiki running in docker container (MySQL + Tomcat) -->
+      <id>docker</id>
+      <build>
+        <plugins>
+          <!-- Don't run the packager mojo which is only useful when generating a HSQLDB/Jetty testing distribution -->
+          <plugin>
+            <groupId>org.xwiki.platform</groupId>
+            <artifactId>xwiki-platform-tool-packager-plugin</artifactId>
+            <version>${project.version}</version>
+            <configuration>
+              <skip>true</skip>
+            </configuration>
+          </plugin>
+          <!-- Start and Stop the docker images (DB, XWiki) -->
+          <plugin>
+            <groupId>io.fabric8</groupId>
+            <artifactId>docker-maven-plugin</artifactId>
+            <version>0.23.0</version>
+            <executions>
+              <execution>
+                <id>start</id>
+                <phase>pre-integration-test</phase>
+                <goals>
+                  <goal>start</goal>
+                </goals>
+                <configuration>
+                  <!-- TODO: Ideally we should use a network and not a link since links are deprecated. However networks
+                       don't seem to work with the fabric8 plugin, see
+                       https://groups.google.com/forum/#!topic/fabric8/4taOto4QEXI
+
+                       This is what should be used:
+                       <autoCreateCustomNetworks>true</autoCreateCustomNetworks>
+                       <image>
+                         ...
+                         <run>
+                          <network>
+                            <mode>custom</mode>
+                            <name>xwiki-maven</name>
+                          </network>
+                        ...
+                        <run>
+                          <dependsOn>
+                            <container>mysql-xwiki</container>
+                          </dependsOn>
+                          <network>
+                            <mode>custom</mode>
+                            <name>xwiki-maven</name>
+                          </network>
+                        ...
+                  -->
+                  <imagePullPolicy>IfNotPresent</imagePullPolicy>
+                  <showLogs>true</showLogs>
+                  <images>
+                    <!-- Execute the MySQL image in a container -->
+                    <image>
+                      <alias>mysql-xwiki</alias>
+                      <name>mysql:5.7</name>
+                      <run>
+                        <volumes>
+                          <bind>
+                            <volume>${project.build.directory}/docker/mysql:/var/lib/mysql</volume>
+                          </bind>
+                        </volumes>
+                        <env>
+                          <MYSQL_ROOT_PASSWORD>xwiki</MYSQL_ROOT_PASSWORD>
+                          <MYSQL_USER>xwiki</MYSQL_USER>
+                          <MYSQL_PASSWORD>xwiki</MYSQL_PASSWORD>
+                          <MYSQL_DATABASE>xwiki</MYSQL_DATABASE>
+                        </env>
+                        <cmd>
+                          <arg>--character-set-server=utf8</arg>
+                          <arg>--collation-server=utf8_bin</arg>
+                          <arg>--explicit-defaults-for-timestamp=1</arg>
+                        </cmd>
+                        <log>
+                          <prefix>%n|</prefix>
+                          <date>default</date>
+                          <color>cyan</color>
+                        </log>
+                        <wait>
+                          <log>.*port: 3306  MySQL Community Server.*</log>
+                          <time>60000</time>
+                        </wait>
+                      </run>
+                    </image>
+                    <image>
+                      <alias>xwiki</alias>
+                      <name>xwiki:latest</name>
+                      <run>
+                        <links>
+                          <link>mysql-xwiki</link>
+                        </links>
+                        <volumes>
+                          <bind>
+                            <volume>${project.build.directory}/docker/xwiki:/usr/local/xwiki</volume>
+                            <volume>${user.home}/.m2/repository:/usr/local/repository</volume>
+                          </bind>
+                        </volumes>
+                        <env>
+                          <DB_USER>xwiki</DB_USER>
+                          <DB_PASSWORD>xwiki</DB_PASSWORD>
+                          <DB_DATABASE>xwiki</DB_DATABASE>
+                          <DB_HOST>mysql-xwiki</DB_HOST>
+                          <!-- We need to use the mail module in some tests (e.g. ResetPasswordTest) -->
+                          <!--DB_EXTRA><![CDATA[<mapping resource="mailsender.hbm.xml"/>]]></DB_EXTRA-->
+                          <!--
+                          <PLUGINS>\
+                            com.xpn.xwiki.plugin.skinx.JsSkinExtensionPlugin,\
+                            com.xpn.xwiki.plugin.skinx.JsSkinFileExtensionPlugin,\
+                            com.xpn.xwiki.plugin.skinx.CssSkinExtensionPlugin,\
+                            com.xpn.xwiki.plugin.skinx.CssSkinFileExtensionPlugin,\
+                            com.xpn.xwiki.plugin.skinx.LinkExtensionPlugin,\
+                            com.xpn.xwiki.plugin.packaging.PackagePlugin,\
+                            com.xpn.xwiki.plugin.rightsmanager.RightsManagerPlugin
+                          </PLUGINS>
+                          -->
+                          <SUPERADMIN_PWD>pass</SUPERADMIN_PWD>
+                          <!-- The following extra properties are set for the following reasons:
+
+                               1) XWiki.ResetPassword uses the saveAsAuthor() API which performs a check on whether
+                                  permissions have been dropped and since the PR checker works by dropping permissions,
+                                  it causes the user to become guest and thus the doc save fails. Thus we need to
+                                  exclude the page from the PR checker
+
+                               2) We skip the DW since we're not installing a flavor and it would appear otherwise.
+
+                               3) In order for the provisioning plugin defined below to be able to install the XARs
+                                  required for the functional tests, we need to configure XWiki to use the local Maven
+                                  repository as the XWiki Extension repository. Since dependencies should have been
+                                  built locally before (or downloaded from the Maven remote repo) they're present in
+                                  the local repository
+                          -->
+                          <EXTRA_PROPERTIES><![CDATA[
+                            test.prchecker.excludePattern=.*:XWiki\.ResetPassword|.*:XWiki\.ResetPasswordComplete
+distribution.automaticStartOnMainWiki=false
+extension.repositories=maven-local:maven:file:///usr/local/repository
+                          ]]></EXTRA_PROPERTIES>
+                        </env>
+                        <ports>
+                          <port>8080:8080</port>
+                        </ports>
+                        <wait>
+                          <http>
+                            <url>http://localhost:8080/bin/get/Main/WebHome</url>
+                          </http>
+                          <time>100000</time>
+                        </wait>
+                        <log>
+                          <prefix>%n|</prefix>
+                          <date>default</date>
+                          <color>red</color>
+                        </log>
+                      </run>
+                    </image>
+                  </images>
+                </configuration>
+              </execution>
+              <execution>
+                <id>stop</id>
+                <phase>post-integration-test</phase>
+                <goals>
+                  <goal>stop</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <!-- Provision the running XWiki instance with the extension we want to test and its transitive
+               dependencies -->
+          <plugin>
+            <groupId>org.xwiki.platform</groupId>
+            <artifactId>xwiki-platform-tool-provision-plugin</artifactId>
+            <version>${project.version}</version>
+            <configuration>
+              <xwikiRESTURL>http://localhost:8080/rest</xwikiRESTURL>
+              <extensionIds>
+                <extensionId>
+                  <id>org.xwiki.platform:xwiki-platform-administration-ui</id>
+                  <version>${project.version}</version>
+                </extensionId>
+                <extensionId>
+                  <id>org.xwiki.platform:xwiki-platform-mail-ui</id>
+                  <version>${project.version}</version>
+                </extensionId>
+              </extensionIds>
+              <!-- Install pages as superadmin to have the proper rights -->
+              <installUserReference>XWiki.superadmin</installUserReference>
+            </configuration>
+            <executions>
+              <execution>
+                <id>install</id>
+                <goals>
+                  <goal>install</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <!-- Tell the XWiki functional tests to not start/stop XWiki since we're doing that with Docker -->
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <configuration>
+              <systemProperties>
+                <xwiki.test.startXWiki>false</xwiki.test.startXWiki>
+                <!-- XWiki is deployed as ROOT in the docker container: we need to tell that to the test framework so
+                     that it uses proper URLs -->
+                <xwiki.test.context></xwiki.test.context>
+              </systemProperties>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
     <profile>
       <id>clover</id>
       <!-- Add the Clover JAR to the WAR so that it's available at runtime when XWiki executes.
