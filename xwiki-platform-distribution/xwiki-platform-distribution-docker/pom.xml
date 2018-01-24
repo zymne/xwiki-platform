@@ -32,6 +32,19 @@
   <packaging>pom</packaging>
   <description>Docker images for XWiki</description>
   <modules>
+    <module>xwiki-platform-distribution-docker-maven</module>
     <module>xwiki-platform-distribution-docker-tomcat-mysql</module>
   </modules>
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>io.fabric8</groupId>
+          <artifactId>docker-maven-plugin</artifactId>
+          <version>0.23.0</version>
+          <extensions>true</extensions>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
 </project>

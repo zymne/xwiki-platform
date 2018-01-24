@@ -27,33 +27,10 @@
     <artifactId>xwiki-platform-distribution-docker</artifactId>
     <version>10.0-SNAPSHOT</version>
   </parent>
-  <artifactId>xwiki-platform-distribution-docker-tomcat-mysql</artifactId>
-  <name>XWiki Platform - Distribution - Docker - Tomcat/MySQL</name>
+  <artifactId>xwiki-platform-distribution-docker-maven</artifactId>
+  <name>XWiki Platform - Distribution - Docker - Maven</name>
   <packaging>docker-build</packaging>
-  <description>Tomcat/MySQL Docker images for XWiki</description>
-  <properties>
-    <!-- MySQL properties -->
-    <xwiki.docker.aptGetLib>libmysql-java</xwiki.docker.aptGetLib>
-    <xwiki.docker.jdbcJARLocation>/usr/share/java/mysql-connector-java-*.jar</xwiki.docker.jdbcJARLocation>
-    <xwiki.docker.db>mysql</xwiki.docker.db>
-    <!-- TODO: In the future introduce a distribution-docker-common module to generate a JAR file with the content
-         of src/main/docker and then use the Maven Remote Resources plugin to get it and expand it
-
-         Properties for PostgreSQL:
-
-         <xwiki.docker.aptGetLib>libpostgresql-jdbc-java</xwiki.docker.aptGetLib>
-         <xwiki.docker.jdbcJARLocation>/usr/share/java/postgresql-jdbc4.jar</xwiki.docker.jdbcJARLocation>
-         <xwiki.docker.db>pgsql</xwiki.docker.db>
-    -->
-  </properties>
-  <dependencies>
-    <dependency>
-      <groupId>org.xwiki.platform</groupId>
-      <artifactId>xwiki-platform-distribution-war</artifactId>
-      <version>${project.version}</version>
-      <type>war</type>
-    </dependency>
-  </dependencies>
+  <description>Docker image for running functional UI tests</description>
   <build>
     <plugins>
       <plugin>
@@ -63,14 +40,8 @@
           <imagePullPolicy>IfNotPresent</imagePullPolicy>
           <images>
             <image>
-              <alias>xwiki</alias>
-              <name>xwiki:latest</name>
+              <name>xwiki-maven</name>
               <build>
-                <tags>
-                  <tag>${project.version}-mysql-tomcat</tag>
-                  <tag>${project.version}-mysql</tag>
-                  <tag>${project.version}</tag>
-                </tags>
                 <assembly>
                   <name>xwiki</name>
                   <targetDir>/maven</targetDir>

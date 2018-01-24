@@ -241,24 +241,24 @@
                           </bind>
                         </volumes>
                         <env>
+                          <!-- For hibernate.cfg.xml -->
                           <DB_USER>xwiki</DB_USER>
                           <DB_PASSWORD>xwiki</DB_PASSWORD>
                           <DB_DATABASE>xwiki</DB_DATABASE>
                           <DB_HOST>mysql-xwiki</DB_HOST>
-                          <!-- We need to use the mail module in some tests (e.g. ResetPasswordTest) -->
-                          <!--DB_EXTRA><![CDATA[<mapping resource="mailsender.hbm.xml"/>]]></DB_EXTRA-->
-                          <!--
-                          <PLUGINS>\
-                            com.xpn.xwiki.plugin.skinx.JsSkinExtensionPlugin,\
-                            com.xpn.xwiki.plugin.skinx.JsSkinFileExtensionPlugin,\
-                            com.xpn.xwiki.plugin.skinx.CssSkinExtensionPlugin,\
-                            com.xpn.xwiki.plugin.skinx.CssSkinFileExtensionPlugin,\
-                            com.xpn.xwiki.plugin.skinx.LinkExtensionPlugin,\
-                            com.xpn.xwiki.plugin.packaging.PackagePlugin,\
-                            com.xpn.xwiki.plugin.rightsmanager.RightsManagerPlugin
-                          </PLUGINS>
-                          -->
-                          <SUPERADMIN_PWD>pass</SUPERADMIN_PWD>
+                          <!-- For xwiki.cfg -->
+                          <EXTRA_CFG><![CDATA[
+                            xwiki.plugins = \
+  com.xpn.xwiki.plugin.skinx.JsSkinExtensionPlugin,\
+  com.xpn.xwiki.plugin.skinx.JsSkinFileExtensionPlugin,\
+  com.xpn.xwiki.plugin.skinx.CssSkinExtensionPlugin,\
+  com.xpn.xwiki.plugin.skinx.CssSkinFileExtensionPlugin,\
+  com.xpn.xwiki.plugin.skinx.LinkExtensionPlugin,\
+  com.xpn.xwiki.plugin.packaging.PackagePlugin,\
+  com.xpn.xwiki.plugin.rightsmanager.RightsManagerPlugin
+xwiki.superadminpassword=pass
+                          ]]></EXTRA_CFG>
+                          <!-- For xwiki.properties -->
                           <!-- The following extra properties are set for the following reasons:
 
                                1) XWiki.ResetPassword uses the saveAsAuthor() API which performs a check on whether
@@ -273,11 +273,15 @@
                                   repository as the XWiki Extension repository. Since dependencies should have been
                                   built locally before (or downloaded from the Maven remote repo) they're present in
                                   the local repository
+
+                               4) Override openoffice auto start since we don't need it for these tests and that will
+                                  make XWiki start faster.
                           -->
                           <EXTRA_PROPERTIES><![CDATA[
                             test.prchecker.excludePattern=.*:XWiki\.ResetPassword|.*:XWiki\.ResetPasswordComplete
 distribution.automaticStartOnMainWiki=false
 extension.repositories=maven-local:maven:file:///usr/local/repository
+openoffice.autoStart = false
                           ]]></EXTRA_PROPERTIES>
                         </env>
                         <ports>
@@ -296,6 +300,27 @@ extension.repositories=maven-local:maven:file:///usr/local/repository
                         </log>
                       </run>
                     </image>
+                    <image>
+                      <name>xwiki-maven</name>
+                      <run>
+                        <links>
+                          <link>xwiki</link>
+                        </links>
+                        <volumes>
+                          <bind>
+                            <volume>${project.basedir}:/usr/src/mymaven</volume>
+                            <volume>${user.home}/.m2:/root/.m2</volume>
+                            <!--volume>${project.basedir}/target:/usr/src/mymaven/target</volume-->
+                          </bind>
+                        </volumes>
+                        <workingDir>/usr/src/mymaven</workingDir>
+                        <cmd>
+                          <arg>mvn</arg>
+                          <arg>verify</arg>
+                          <arg>-Pdocker-maven</arg>
+                        </cmd>
+                      </run>
+                    </image>
                   </images>
                 </configuration>
               </execution>
@@ -307,6 +332,31 @@ extension.repositories=maven-local:maven:file:///usr/local/repository
                 </goals>
               </execution>
             </executions>
+          </plugin>
+          <!-- Don't start the functional tests since they'll be started by the docker container that will
+               execute Maven and the tests using the "docker-maven" profile -->
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <configuration>
+              <skip>true</skip>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>docker-maven</id>
+      <build>
+        <plugins>
+          <!-- Don't run the packager mojo which is only useful when generating a HSQLDB/Jetty testing distribution -->
+          <plugin>
+            <groupId>org.xwiki.platform</groupId>
+            <artifactId>xwiki-platform-tool-packager-plugin</artifactId>
+            <version>${project.version}</version>
+            <configuration>
+              <skip>true</skip>
+            </configuration>
           </plugin>
           <!-- Provision the running XWiki instance with the extension we want to test and its transitive
                dependencies -->
