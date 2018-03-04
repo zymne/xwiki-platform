@@ -40,18 +40,11 @@ public interface XWikiContextInitializationManager
     void initialize() throws XWikiContextInitializationException;
 
     /**
-     * Initialize the XWiki context and set it in the execution context available through the Execution component.
-     *
-     * @param mode the mode of the XWiki context
-     * @throws XWikiContextInitializationException if an error happened
-     */
-    void initialize(int mode) throws XWikiContextInitializationException;
-
-    /**
      * Initialize the XWiki context and set it in the given execution context.
      *
      * @param executionContext the execution context that should contain the initialized XWiki context
-     * @param mode the mode of the XWiki context
+     * @param mode the mode of the XWiki context. The mode should be one of the possible values defined in XWikiContext
+     * and will be ignored if negative.
      * @throws XWikiContextInitializationException if an error happened
      */
     void initialize(ExecutionContext executionContext, int mode) throws XWikiContextInitializationException;

@@ -67,12 +67,6 @@ public class DefaultXWikiContextInitializationManager implements XWikiContextIni
     }
 
     @Override
-    public void initialize(int mode) throws XWikiContextInitializationException
-    {
-        initialize(execution.getContext(), mode);
-    }
-
-    @Override
     public void initialize(ExecutionContext executionContext, int mode) throws XWikiContextInitializationException
     {
         try {
