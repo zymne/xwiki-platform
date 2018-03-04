@@ -19,6 +19,8 @@
  */
 package org.xwiki.context;
 
+import java.util.Arrays;
+
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.servlet.ServletContext;
@@ -29,6 +31,8 @@ import org.xwiki.component.annotation.Component;
 import org.xwiki.container.Container;
 import org.xwiki.container.servlet.ServletRequest;
 import org.xwiki.container.servlet.ServletResponse;
+import org.xwiki.job.Job;
+import org.xwiki.job.JobExecutor;
 import org.xwiki.model.reference.DocumentReference;
 import org.xwiki.model.reference.DocumentReferenceResolver;
 import org.xwiki.model.reference.SpaceReference;
@@ -37,6 +41,7 @@ import org.xwiki.model.reference.WikiReference;
 import com.xpn.xwiki.XWiki;
 import com.xpn.xwiki.XWikiContext;
 import com.xpn.xwiki.XWikiException;
+import com.xpn.xwiki.internal.XWikiInitializerJob;
 import com.xpn.xwiki.user.api.XWikiRightService;
 import com.xpn.xwiki.user.api.XWikiUser;
 import com.xpn.xwiki.web.Utils;
@@ -60,14 +65,36 @@ public class DefaultXWikiContextInitializationManager implements XWikiContextIni
     @Inject
     private Execution execution;
 
+    @Inject
+    private JobExecutor jobExecutor;
+
     @Override
     public void initialize() throws XWikiContextInitializationException
     {
-        initialize(execution.getContext(), -1);
+        performInitialization(execution.getContext(), -1, true);
     }
 
     @Override
     public void initialize(ExecutionContext executionContext, int mode) throws XWikiContextInitializationException
+    {
+        performInitialization(executionContext, mode, true);
+    }
+
+    @Override
+    public Job initializeAsync() throws XWikiContextInitializationException
+    {
+        return performInitialization(execution.getContext(), -1, false);
+    }
+
+    @Override
+    public Job initializeAsync(ExecutionContext executionContext, int mode)
+            throws XWikiContextInitializationException
+    {
+        return performInitialization(executionContext, mode, false);
+    }
+
+    private Job performInitialization(ExecutionContext executionContext, int mode, boolean wait)
+            throws XWikiContextInitializationException
     {
         try {
             HttpServletRequest httpServletRequest = ((ServletRequest) container.getRequest()).getHttpServletRequest();
@@ -98,27 +125,33 @@ public class DefaultXWikiContextInitializationManager implements XWikiContextIni
                 executionContext.newProperty(key).inherited().initial(xwikiContext).declare();
             }
 
-            // Initialize the XWiki database. XWiki#getXWiki(XWikiContext) calls XWikiContext.setWiki(XWiki).
-            XWiki xwiki = XWiki.getXWiki(xwikiContext);
+            // Initialize the XWiki. This will trigger the XWiki initialization job.
+            XWiki xwiki = XWiki.getXWiki(wait, xwikiContext);
 
-            // Initialize the URL factory.
-            xwikiContext.setURLFactory(xwiki.getURLFactoryService().createURLFactory(
-                    xwikiContext.getMode(), xwikiContext));
+            if (xwiki != null) {
+                // Initialize the URL factory.
+                xwikiContext.setURLFactory(xwiki.getURLFactoryService().createURLFactory(
+                        xwikiContext.getMode(), xwikiContext));
 
-            // Prepare the localized resources, according to the selected language.
-            xwiki.prepareResources(xwikiContext);
+                // Prepare the localized resources, according to the selected language.
+                xwiki.prepareResources(xwikiContext);
 
-            // Initialize the current user.
-            XWikiUser user = xwikiContext.getWiki().checkAuth(xwikiContext);
-            if (user != null) {
-                DocumentReferenceResolver<String> documentReferenceResolver =
-                        Utils.getComponent(DocumentReferenceResolver.TYPE_STRING, "explicit");
-                SpaceReference defaultUserSpace =
-                        new SpaceReference(XWiki.SYSTEM_SPACE, new WikiReference(xwikiContext.getWikiId()));
-                DocumentReference userReference = documentReferenceResolver.resolve(user.getUser(), defaultUserSpace);
-                xwikiContext.setUserReference(XWikiRightService.GUEST_USER.equals(userReference.getName()) ? null
-                        : userReference);
+                // Initialize the current user.
+                XWikiUser user = xwikiContext.getWiki().checkAuth(xwikiContext);
+                if (user != null) {
+                    DocumentReferenceResolver<String> documentReferenceResolver =
+                            Utils.getComponent(DocumentReferenceResolver.TYPE_STRING, "explicit");
+                    SpaceReference defaultUserSpace =
+                            new SpaceReference(XWiki.SYSTEM_SPACE, new WikiReference(xwikiContext.getWikiId()));
+                    DocumentReference userReference = documentReferenceResolver.resolve(user.getUser(),
+                            defaultUserSpace);
+                    xwikiContext.setUserReference(XWikiRightService.GUEST_USER.equals(userReference.getName()) ? null
+                            : userReference);
+                }
             }
+
+            // Return the XWiki initialization job
+            return jobExecutor.getJob(Arrays.asList(XWikiInitializerJob.JOBTYPE));
         } catch (XWikiException e) {
             throw new XWikiContextInitializationException("Failed to initialize the XWiki context.", e);
         }

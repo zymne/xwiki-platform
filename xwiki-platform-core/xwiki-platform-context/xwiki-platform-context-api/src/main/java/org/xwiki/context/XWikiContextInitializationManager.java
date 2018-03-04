@@ -20,6 +20,7 @@
 package org.xwiki.context;
 
 import org.xwiki.component.annotation.Role;
+import org.xwiki.job.Job;
 import org.xwiki.stability.Unstable;
 
 /**
@@ -48,4 +49,26 @@ public interface XWikiContextInitializationManager
      * @throws XWikiContextInitializationException if an error happened
      */
     void initialize(ExecutionContext executionContext, int mode) throws XWikiContextInitializationException;
+
+    /**
+     * Initialize the XWiki context asynchronously and returns the {@link Job} related to the initialization.
+     * When XWiki is initialized, adds the XWiki Context to the execution context available through the
+     * Execution component.
+     *
+     * @return the job related to XWiki initialization
+     * @throws XWikiContextInitializationException if an error happened
+     */
+    Job initializeAsync() throws XWikiContextInitializationException;
+
+    /**
+     * Initialize the XWiki context asynchronously and returns the {@link Job} related to the initialization.
+     * When XWiki is initialized, adds the XWiki Context to the given execution context.
+     *
+     * @param executionContext the execution context that should contain the initialized XWiki context
+     * @param mode the mode of the XWiki context. The mode should be one of the possible values defined in XWikiContext
+     * and will be ignored if negative.
+     * @return the job related to XWiki initialization
+     * @throws XWikiContextInitializationException if an error happened
+     */
+    Job initializeAsync(ExecutionContext executionContext, int mode) throws XWikiContextInitializationException;
 }
