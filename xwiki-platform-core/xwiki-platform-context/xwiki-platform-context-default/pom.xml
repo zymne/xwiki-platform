@@ -21,38 +21,40 @@
 -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-    <parent>
-        <groupId>org.xwiki.platform</groupId>
-        <artifactId>xwiki-platform-context</artifactId>
-        <version>10.2-SNAPSHOT</version>
-    </parent>
-    <artifactId>xwiki-platform-context-default</artifactId>
-    <name>XWiki Platform - Context - Default Bridge</name>
-    <packaging>jar</packaging>
-    <description>Default implementation of xwiki-platform-context-api</description>
-    <dependencies>
-        <dependency>
-            <groupId>org.xwiki.platform</groupId>
-            <artifactId>xwiki-platform-context-api</artifactId>
-            <version>${project.version}</version>
-        </dependency>
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.xwiki.platform</groupId>
+    <artifactId>xwiki-platform-context</artifactId>
+    <version>10.2-SNAPSHOT</version>
+  </parent>
+  <artifactId>xwiki-platform-context-default</artifactId>
+  <name>XWiki Platform - Context - Default Bridge</name>
+  <packaging>jar</packaging>
+  <description>Default implementation of xwiki-platform-context-api</description>
+  <properties>
+    <checkstyle.suppressions.location>${basedir}/src/main/checkstyle/checkstyle-suppressions.xml</checkstyle.suppressions.location>
+  </properties>
+  <dependencies>
+    <dependency>
+      <groupId>org.xwiki.platform</groupId>
+      <artifactId>xwiki-platform-context-api</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.xwiki.platform</groupId>
+      <artifactId>xwiki-platform-component-multi</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.xwiki.platform</groupId>
+      <artifactId>xwiki-platform-oldcore</artifactId>
+      <version>${project.version}</version>
+    </dependency>
 
-        <dependency>
-            <groupId>org.xwiki.platform</groupId>
-            <artifactId>xwiki-platform-component-multi</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.xwiki.platform</groupId>
-            <artifactId>xwiki-platform-oldcore</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>javax.servlet-api</artifactId>
-            <scope>compile</scope>
-        </dependency>
-    </dependencies>
+    <dependency>
+      <groupId>javax.servlet</groupId>
+      <artifactId>javax.servlet-api</artifactId>
+      <scope>compile</scope>
+    </dependency>
+  </dependencies>
 </project>

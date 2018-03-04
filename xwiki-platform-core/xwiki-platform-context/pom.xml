@@ -21,18 +21,18 @@
 -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-    <parent>
-        <groupId>org.xwiki.platform</groupId>
-        <artifactId>xwiki-platform-core</artifactId>
-        <version>10.2-SNAPSHOT</version>
-    </parent>
-    <artifactId>xwiki-platform-context</artifactId>
-    <name>XWiki Platform - Context - Parent POM</name>
-    <packaging>pom</packaging>
-    <description>Modules related to the execution context</description>
-    <modules>
-        <module>xwiki-platform-context-api</module>
-        <module>xwiki-platform-context-default</module>
-    </modules>
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.xwiki.platform</groupId>
+    <artifactId>xwiki-platform-core</artifactId>
+    <version>10.2-SNAPSHOT</version>
+  </parent>
+  <artifactId>xwiki-platform-context</artifactId>
+  <name>XWiki Platform - Context - Parent POM</name>
+  <packaging>pom</packaging>
+  <description>Modules related to the execution context</description>
+  <modules>
+    <module>xwiki-platform-context-api</module>
+    <module>xwiki-platform-context-default</module>
+  </modules>
 </project>
