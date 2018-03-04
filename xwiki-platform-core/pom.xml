@@ -178,6 +178,7 @@
     <module>xwiki-platform-component</module>
     <module>xwiki-platform-configuration</module>
     <module>xwiki-platform-containers</module>
+    <module>xwiki-platform-context</module>
     <module>xwiki-platform-crypto</module>
     <module>xwiki-platform-csrf</module>
     <module>xwiki-platform-dashboard</module>
