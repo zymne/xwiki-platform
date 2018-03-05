@@ -118,11 +118,11 @@ public class DefaultXWikiContextInitializationManager implements XWikiContextIni
             }
 
             // Bridge with old code to play well with new components.
-            String key = "xwikicontext";
-            if (executionContext.hasProperty(key)) {
-                executionContext.setProperty(key, xwikiContext);
+            if (executionContext.hasProperty(XWikiContext.EXECUTIONCONTEXT_KEY)) {
+                executionContext.setProperty(XWikiContext.EXECUTIONCONTEXT_KEY, xwikiContext);
             } else {
-                executionContext.newProperty(key).inherited().initial(xwikiContext).declare();
+                executionContext.newProperty(XWikiContext.EXECUTIONCONTEXT_KEY).inherited()
+                        .initial(xwikiContext).declare();
             }
 
             // Initialize the XWiki. This will trigger the XWiki initialization job.
