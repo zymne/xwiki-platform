@@ -126,6 +126,11 @@
       <artifactId>selenium-java</artifactId>
       <version>${selenium.version}</version>
       <exclusions>
+        <!-- We want to choose the SLF4J binding only when XWiki is packaged. -->
+        <exclusion>
+          <groupId>commons-logging</groupId>
+          <artifactId>commons-logging</artifactId>
+        </exclusion>
         <!-- XWiki uses a more recent version of bytebuddy -->
         <exclusion>
           <groupId>net.bytebuddy</groupId>
