@@ -45,7 +45,7 @@
   </dependencies>
   <profiles>
     <profile>
-      <id>docker</id>
+      <id>integration-tests</id>
       <modules>
         <module>xwiki-platform-menu-test</module>
       </modules>
